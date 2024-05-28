@@ -1,0 +1,165 @@
+
+volumes:
+  mongodb_data:
+  graylog-datanode:
+  graylog_data:
+  graylog_journal:
+  telegram-session:
+  wayout-cli-config:
+
+networks:
+  default:
+  flogram-internal:
+    external: true
+
+services:
+
+  protoc-go:
+    profiles:
+      - protoc
+    build:
+      context: .
+      dockerfile: protoc.go.Dockerfile
+    volumes:
+      - ./:/source
+      - ./flo_tg/proto:/out/go
+    restart: no
+
+  protoc-swift:
+    profiles:
+      - protoc
+    build:
+      context: .
+      dockerfile: protoc.swift.Dockerfile
+    volumes:
+      - ./:/source
+    restart: no
+
+  mongodb:
+    profiles:
+      - bedrock
+      - main
+    image: "mongo:7.0.6"
+    volumes:
+      - mongodb_data:/data/db
+    restart: on-failure
+    networks:
+      - default
+      - flogram-internal
+
+  # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
+  datanode:
+    profiles:
+      - bedrock
+      - main
+    image: "${DATANODE_IMAGE:-graylog/graylog-datanode:5.2}"
+    depends_on:
+      - mongodb
+    environment:
+      GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
+      GRAYLOG_DATANODE_PASSWORD_SECRET: "${GRAYLOG_PASSWORD_SECRET:?Please set GRAYLOG_PASSWORD_SECRET in the .env file}"
+      GRAYLOG_DATANODE_ROOT_PASSWORD_SHA2: "${GRAYLOG_ROOT_PASSWORD_SHA2:?Please set GRAYLOG_ROOT_PASSWORD_SHA2 in the .env file}"
+      GRAYLOG_DATANODE_MONGODB_URI: "mongodb://mongodb:27017/graylog"
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "8999:8999/tcp"   # DataNode API
+      - "9200:9200/tcp"
+      - "9300:9300/tcp"
+    volumes:
+      - "graylog-datanode:/var/lib/graylog-datanode"
+    restart: on-failure
+    networks:
+      - flogram-internal
+      - default
+
+  graylog:
+    profiles:
+      - bedrock
+      - main
+    image: "${GRAYLOG_IMAGE:-graylog/graylog:5.2}"
+    depends_on:
+      - mongodb
+      - datanode
+    entrypoint: "/usr/bin/tini --  /docker-entrypoint.sh"
+    environment:
+      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/data/node-id"
+      GRAYLOG_PASSWORD_SECRET: "${GRAYLOG_PASSWORD_SECRET:?Please set GRAYLOG_PASSWORD_SECRET in the .env file}"
+      GRAYLOG_ROOT_PASSWORD_SHA2: "${GRAYLOG_ROOT_PASSWORD_SHA2:?Please set GRAYLOG_ROOT_PASSWORD_SHA2 in the .env file}"
+      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
+      GRAYLOG_HTTP_EXTERNAL_URI: "http://localhost:9000/"
+      GRAYLOG_MONGODB_URI: "mongodb://mongodb:27017/graylog"
+      # To make reporting (headless_shell) work inside a Docker container
+      GRAYLOG_REPORT_DISABLE_SANDBOX: "true"
+    ports:
+    - "5044:5044/tcp"   # Beats
+    - "5140:5140/tcp"   # Syslog TCP
+    - "5140:5140/udp"   # Syslog UDP
+    - "5555:5555/tcp"   # RAW TCP
+    - "5555:5555/udp"   # RAW UDP
+    - "9000:9000/tcp"   # Server API
+    - "12201:12201/tcp" # GELF TCP
+    - "12201:12201/udp" # GELF UDP
+    #- "10000:10000/tcp" # Custom TCP port
+    #- "10000:10000/udp" # Custom UDP port
+    - "13301:13301/tcp" # Forwarder data
+    - "13302:13302/tcp" # Forwarder config
+    volumes:
+      - "graylog_data:/usr/share/graylog/data/data"
+      - "graylog_journal:/usr/share/graylog/data/journal"
+    restart: on-failure
+    networks:
+      - flogram-internal
+
+  wayout-cli:
+    profiles:
+      - tool
+    build:
+      context: .
+      dockerfile: wayout-cli.Dockerfile
+    environment:
+      WAYOUT_CLI_CONF_DIR: /var/lib/flogram/wayout.config
+    volumes:
+      - wayout-cli-config:/var/lib/flogram/wayout.config
+    restart: no
+    networks:
+      - flogram-internal
+
+  flo_tg:
+    profiles:
+      - main
+    build: flo_tg
+    depends_on:
+      - graylog
+      - mongodb
+    environment:
+      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
+      GRAYLOG_ADDRESS: graylog:12201
+      MONGO_URI: mongodb://mongodb:27017
+      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
+      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
+      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
+      TG_SESSION_PATH: /var/run/telegram-session
+    volumes:
+      - telegram-session:/var/run/telegram-session
+    restart: on-failure
+    networks:
+      - flogram-internal
+
+  flo_rss:
+    profiles:
+      - main
+    build:
+      context: .
+      dockerfile: flo_rss.Dockerfile
+    depends_on:
+      - graylog
+      - mongodb
+    restart: on-failure
+    networks:
+      - flogram-internal

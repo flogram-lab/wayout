@@ -1,0 +1,76 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Debug wayout",
+            "program": "${workspaceFolder:src}/.build/debug/wayout",
+            "preLaunchTask": "swift: Build Debug wayout"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Release wayout",
+            "program": "${workspaceFolder:src}/.build/release/wayout",
+            "preLaunchTask": "swift: Build Release wayout"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Debug Wayout",
+            "program": "${workspaceFolder:src}/.build/debug/Wayout",
+            "preLaunchTask": "swift: Build Debug Wayout"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Release Wayout",
+            "program": "${workspaceFolder:src}/.build/release/Wayout",
+            "preLaunchTask": "swift: Build Release Wayout"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Debug wayout-cli",
+            "program": "${workspaceFolder:src}/.build/debug/cli",
+            "preLaunchTask": "swift: Build Debug wayout-cli"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:src}",
+            "name": "Release wayout-cli",
+            "program": "${workspaceFolder:src}/.build/release/cli",
+            "preLaunchTask": "swift: Build Release wayout-cli"
+        }
+    ]
+}

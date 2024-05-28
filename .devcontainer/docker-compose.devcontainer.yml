@@ -1,0 +1,44 @@
+
+# Extension to main docker-compose.yml
+
+services:
+
+  wayout-cli-devcontainer:
+    build: 
+      context: wayout-cli
+      dockerfile: devcontainer.Dockerfile
+    environment:
+      WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
+    volumes:
+      - ./wayout-cli:/root/wayout-cli
+      - ./wayout-lib:/root/wayout-lib
+    networks:
+      - flogram-internal
+
+  wayout-lib-devcontainer:
+    build: 
+      context: wayout-lib
+      dockerfile: devcontainer.Dockerfile
+    volumes:
+      - ./wayout-lib:/root/wayout-lib
+    networks:
+      - flogram-internal
+
+  flo_tg-devcontainer:
+    build: 
+      context: flo_tg
+      dockerfile: devcontainer.Dockerfile
+    env_file: .env
+    environment:
+      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
+      GRAYLOG_ADDRESS: graylog:12201
+      MONGO_URI: mongodb://mongodb:27017
+      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
+      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
+      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
+      TG_SESSION_PATH: /var/run/telegram-session
+    volumes:
+      - telegram-session:/var/run/telegram-session
+      - ./flo_tg:/root/flo_tg
+    networks:
+      - flogram-internal

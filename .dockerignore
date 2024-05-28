@@ -1,0 +1,9 @@
+.tmp
+Dockerfile
+.git
+.vscode
+.devcontainer
+.env
+.build
+.DS_Store
+.bak

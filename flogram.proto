@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/flogram-lab/wayout/flo_tg/proto";
+
+// TODO: telegram message attachments
+
+enum FLAGS {
+   V1 = 0;
+
+   Tg = 1;
+   FromUser = 2;
+   FromGroup = 3;
+   FromChannel = 4;
+   FromChannelPublic = 5;
+}
+
+message FLO_SOURCE {
+   int32 flags = 1;
+
+   int64 from_peer_id = 2;
+   int64 to_peer_id = 3;
+   string topic_uid = 4;
+   string title = 5;
+}
+
+message FLO_MESSAGE {
+   int32 flags = 1;
+
+   int64 from_peer_id = 2;
+   int64 to_peer_id = 3;
+   google.protobuf.Timestamp created_at = 4;
+   string title = 5;
+   string text = 6;
+   string topic_uid = 7;
+
+   repeated string message_links = 8;
+}
+
+// ------------------------------------------------------------------------------------------------------
+// flo_tg
+
+service FlotgService {
+   rpc GetChats(google.protobuf.Empty) returns (stream FlotgMonitor);
+   rpc SetMonitoring(FlotgMonitor) returns (FlotgMonitor);
+}
+
+message FlotgMonitor {
+   int32 flags = 1;
+
+   int64 from_peer_id = 2;
+   string topic_uid = 3;
+   bool monitoring_enabled = 4;
+}
+
+// ------------------------------------------------------------------------------------------------------
+// flo_rss
+
+service FloRssService {
+   rpc GetFeeds(google.protobuf.Empty) returns (stream FloRssHosting);
+   rpc CreateFeed(FloRssCreate) returns (FloRssHosting);
+   rpc DeleteFeed(FloRssHosting) returns (google.protobuf.Empty);
+   rpc QueryMessages(FloRssHosting) returns (stream FLO_MESSAGE);
+}
+
+message FloRssHosting {
+   int32 flags = 1;
+
+   string topic_uid = 2;
+   string title = 3;
+   string from_peer_id = 4;
+   string rss_uri = 5;
+}
+
+message FloRssCreate {
+   int32 flags = 1;
+
+   string topic_uid = 2;
+}
