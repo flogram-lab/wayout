@@ -3,23 +3,23 @@
 
 services:
 
-  wayout-cli-devcontainer:
-    build: 
-      context: wayout-cli
-      dockerfile: devcontainer.Dockerfile
-    environment:
-      WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
-    volumes:
-      - ./wayout-cli:/root/wayout-cli
-      - ./wayout-lib:/root/wayout-lib
-    networks:
-      - flogram-internal
-
   wayout-lib-devcontainer:
     build: 
       context: wayout-lib
       dockerfile: devcontainer.Dockerfile
     volumes:
+      - ./wayout-lib:/root/wayout-lib
+    networks:
+      - flogram-internal
+
+  flo_rss-devcontainer:
+    build: 
+      context: flo_rss
+      dockerfile: devcontainer.Dockerfile
+    environment:
+      WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
+    volumes:
+      - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
     networks:
       - flogram-internal

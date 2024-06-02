@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:flo_rss}",
+            "name": "Debug flo_rss",
+            "program": "${workspaceFolder:flo_rss}/.build/debug/flo_rss",
+            "preLaunchTask": "swift: Build Debug flo_rss"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:flo_rss}",
+            "name": "Release flo_rss",
+            "program": "${workspaceFolder:flo_rss}/.build/release/flo_rss",
+            "preLaunchTask": "swift: Build Release flo_rss"
+        }
+    ]
+}
