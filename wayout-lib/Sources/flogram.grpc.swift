@@ -280,7 +280,7 @@ public protocol FloRssServiceClientProtocol: GRPCClient {
     callOptions: CallOptions?
   ) -> UnaryCall<FloRssHosting, SwiftProtobuf.Google_Protobuf_Empty>
 
-  func queryMessages(
+  func getMessages(
     _ request: FloRssHosting,
     callOptions: CallOptions?,
     handler: @escaping (FLO_MESSAGE) -> Void
@@ -349,23 +349,23 @@ extension FloRssServiceClientProtocol {
     )
   }
 
-  /// Server streaming call to QueryMessages
+  /// Server streaming call to GetMessages
   ///
   /// - Parameters:
-  ///   - request: Request to send to QueryMessages.
+  ///   - request: Request to send to GetMessages.
   ///   - callOptions: Call options.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func queryMessages(
+  public func getMessages(
     _ request: FloRssHosting,
     callOptions: CallOptions? = nil,
     handler: @escaping (FLO_MESSAGE) -> Void
   ) -> ServerStreamingCall<FloRssHosting, FLO_MESSAGE> {
     return self.makeServerStreamingCall(
-      path: FloRssServiceClientMetadata.Methods.queryMessages.path,
+      path: FloRssServiceClientMetadata.Methods.getMessages.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeQueryMessagesInterceptors() ?? [],
+      interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
       handler: handler
     )
   }
@@ -448,7 +448,7 @@ public protocol FloRssServiceAsyncClientProtocol: GRPCClient {
     callOptions: CallOptions?
   ) -> GRPCAsyncUnaryCall<FloRssHosting, SwiftProtobuf.Google_Protobuf_Empty>
 
-  func makeQueryMessagesCall(
+  func makeGetMessagesCall(
     _ request: FloRssHosting,
     callOptions: CallOptions?
   ) -> GRPCAsyncServerStreamingCall<FloRssHosting, FLO_MESSAGE>
@@ -500,15 +500,15 @@ extension FloRssServiceAsyncClientProtocol {
     )
   }
 
-  public func makeQueryMessagesCall(
+  public func makeGetMessagesCall(
     _ request: FloRssHosting,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncServerStreamingCall<FloRssHosting, FLO_MESSAGE> {
     return self.makeAsyncServerStreamingCall(
-      path: FloRssServiceClientMetadata.Methods.queryMessages.path,
+      path: FloRssServiceClientMetadata.Methods.getMessages.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeQueryMessagesInterceptors() ?? []
+      interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? []
     )
   }
 }
@@ -551,15 +551,15 @@ extension FloRssServiceAsyncClientProtocol {
     )
   }
 
-  public func queryMessages(
+  public func getMessages(
     _ request: FloRssHosting,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncResponseStream<FLO_MESSAGE> {
     return self.performAsyncServerStreamingCall(
-      path: FloRssServiceClientMetadata.Methods.queryMessages.path,
+      path: FloRssServiceClientMetadata.Methods.getMessages.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeQueryMessagesInterceptors() ?? []
+      interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? []
     )
   }
 }
@@ -592,8 +592,8 @@ public protocol FloRssServiceClientInterceptorFactoryProtocol: Sendable {
   /// - Returns: Interceptors to use when invoking 'deleteFeed'.
   func makeDeleteFeedInterceptors() -> [ClientInterceptor<FloRssHosting, SwiftProtobuf.Google_Protobuf_Empty>]
 
-  /// - Returns: Interceptors to use when invoking 'queryMessages'.
-  func makeQueryMessagesInterceptors() -> [ClientInterceptor<FloRssHosting, FLO_MESSAGE>]
+  /// - Returns: Interceptors to use when invoking 'getMessages'.
+  func makeGetMessagesInterceptors() -> [ClientInterceptor<FloRssHosting, FLO_MESSAGE>]
 }
 
 public enum FloRssServiceClientMetadata {
@@ -604,7 +604,7 @@ public enum FloRssServiceClientMetadata {
       FloRssServiceClientMetadata.Methods.getFeeds,
       FloRssServiceClientMetadata.Methods.createFeed,
       FloRssServiceClientMetadata.Methods.deleteFeed,
-      FloRssServiceClientMetadata.Methods.queryMessages,
+      FloRssServiceClientMetadata.Methods.getMessages,
     ]
   )
 
@@ -627,9 +627,9 @@ public enum FloRssServiceClientMetadata {
       type: GRPCCallType.unary
     )
 
-    public static let queryMessages = GRPCMethodDescriptor(
-      name: "QueryMessages",
-      path: "/FloRssService/QueryMessages",
+    public static let getMessages = GRPCMethodDescriptor(
+      name: "GetMessages",
+      path: "/FloRssService/GetMessages",
       type: GRPCCallType.serverStreaming
     )
   }
@@ -786,7 +786,7 @@ public protocol FloRssServiceProvider: CallHandlerProvider {
 
   func deleteFeed(request: FloRssHosting, context: StatusOnlyCallContext) -> EventLoopFuture<SwiftProtobuf.Google_Protobuf_Empty>
 
-  func queryMessages(request: FloRssHosting, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
+  func getMessages(request: FloRssHosting, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
 }
 
 extension FloRssServiceProvider {
@@ -828,13 +828,13 @@ extension FloRssServiceProvider {
         userFunction: self.deleteFeed(request:context:)
       )
 
-    case "QueryMessages":
+    case "GetMessages":
       return ServerStreamingServerHandler(
         context: context,
         requestDeserializer: ProtobufDeserializer<FloRssHosting>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
-        interceptors: self.interceptors?.makeQueryMessagesInterceptors() ?? [],
-        userFunction: self.queryMessages(request:context:)
+        interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
+        userFunction: self.getMessages(request:context:)
       )
 
     default:
@@ -865,7 +865,7 @@ public protocol FloRssServiceAsyncProvider: CallHandlerProvider, Sendable {
     context: GRPCAsyncServerCallContext
   ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
 
-  func queryMessages(
+  func getMessages(
     request: FloRssHosting,
     responseStream: GRPCAsyncResponseStreamWriter<FLO_MESSAGE>,
     context: GRPCAsyncServerCallContext
@@ -918,13 +918,13 @@ extension FloRssServiceAsyncProvider {
         wrapping: { try await self.deleteFeed(request: $0, context: $1) }
       )
 
-    case "QueryMessages":
+    case "GetMessages":
       return GRPCAsyncServerHandler(
         context: context,
         requestDeserializer: ProtobufDeserializer<FloRssHosting>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
-        interceptors: self.interceptors?.makeQueryMessagesInterceptors() ?? [],
-        wrapping: { try await self.queryMessages(request: $0, responseStream: $1, context: $2) }
+        interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
+        wrapping: { try await self.getMessages(request: $0, responseStream: $1, context: $2) }
       )
 
     default:
@@ -947,9 +947,9 @@ public protocol FloRssServiceServerInterceptorFactoryProtocol: Sendable {
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeDeleteFeedInterceptors() -> [ServerInterceptor<FloRssHosting, SwiftProtobuf.Google_Protobuf_Empty>]
 
-  /// - Returns: Interceptors to use when handling 'queryMessages'.
+  /// - Returns: Interceptors to use when handling 'getMessages'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeQueryMessagesInterceptors() -> [ServerInterceptor<FloRssHosting, FLO_MESSAGE>]
+  func makeGetMessagesInterceptors() -> [ServerInterceptor<FloRssHosting, FLO_MESSAGE>]
 }
 
 public enum FloRssServiceServerMetadata {
@@ -960,7 +960,7 @@ public enum FloRssServiceServerMetadata {
       FloRssServiceServerMetadata.Methods.getFeeds,
       FloRssServiceServerMetadata.Methods.createFeed,
       FloRssServiceServerMetadata.Methods.deleteFeed,
-      FloRssServiceServerMetadata.Methods.queryMessages,
+      FloRssServiceServerMetadata.Methods.getMessages,
     ]
   )
 
@@ -983,9 +983,9 @@ public enum FloRssServiceServerMetadata {
       type: GRPCCallType.unary
     )
 
-    public static let queryMessages = GRPCMethodDescriptor(
-      name: "QueryMessages",
-      path: "/FloRssService/QueryMessages",
+    public static let getMessages = GRPCMethodDescriptor(
+      name: "GetMessages",
+      path: "/FloRssService/GetMessages",
       type: GRPCCallType.serverStreaming
     )
   }

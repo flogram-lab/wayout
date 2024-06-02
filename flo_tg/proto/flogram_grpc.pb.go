@@ -176,7 +176,7 @@ type FloRssServiceClient interface {
 	GetFeeds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (FloRssService_GetFeedsClient, error)
 	CreateFeed(ctx context.Context, in *FloRssCreate, opts ...grpc.CallOption) (*FloRssHosting, error)
 	DeleteFeed(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	QueryMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_QueryMessagesClient, error)
+	GetMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error)
 }
 
 type floRssServiceClient struct {
@@ -237,12 +237,12 @@ func (c *floRssServiceClient) DeleteFeed(ctx context.Context, in *FloRssHosting,
 	return out, nil
 }
 
-func (c *floRssServiceClient) QueryMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_QueryMessagesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &FloRssService_ServiceDesc.Streams[1], "/FloRssService/QueryMessages", opts...)
+func (c *floRssServiceClient) GetMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &FloRssService_ServiceDesc.Streams[1], "/FloRssService/GetMessages", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &floRssServiceQueryMessagesClient{stream}
+	x := &floRssServiceGetMessagesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -252,16 +252,16 @@ func (c *floRssServiceClient) QueryMessages(ctx context.Context, in *FloRssHosti
 	return x, nil
 }
 
-type FloRssService_QueryMessagesClient interface {
+type FloRssService_GetMessagesClient interface {
 	Recv() (*FLO_MESSAGE, error)
 	grpc.ClientStream
 }
 
-type floRssServiceQueryMessagesClient struct {
+type floRssServiceGetMessagesClient struct {
 	grpc.ClientStream
 }
 
-func (x *floRssServiceQueryMessagesClient) Recv() (*FLO_MESSAGE, error) {
+func (x *floRssServiceGetMessagesClient) Recv() (*FLO_MESSAGE, error) {
 	m := new(FLO_MESSAGE)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ type FloRssServiceServer interface {
 	GetFeeds(*emptypb.Empty, FloRssService_GetFeedsServer) error
 	CreateFeed(context.Context, *FloRssCreate) (*FloRssHosting, error)
 	DeleteFeed(context.Context, *FloRssHosting) (*emptypb.Empty, error)
-	QueryMessages(*FloRssHosting, FloRssService_QueryMessagesServer) error
+	GetMessages(*FloRssHosting, FloRssService_GetMessagesServer) error
 	mustEmbedUnimplementedFloRssServiceServer()
 }
 
@@ -293,8 +293,8 @@ func (UnimplementedFloRssServiceServer) CreateFeed(context.Context, *FloRssCreat
 func (UnimplementedFloRssServiceServer) DeleteFeed(context.Context, *FloRssHosting) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFeed not implemented")
 }
-func (UnimplementedFloRssServiceServer) QueryMessages(*FloRssHosting, FloRssService_QueryMessagesServer) error {
-	return status.Errorf(codes.Unimplemented, "method QueryMessages not implemented")
+func (UnimplementedFloRssServiceServer) GetMessages(*FloRssHosting, FloRssService_GetMessagesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
 }
 func (UnimplementedFloRssServiceServer) mustEmbedUnimplementedFloRssServiceServer() {}
 
@@ -366,24 +366,24 @@ func _FloRssService_DeleteFeed_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FloRssService_QueryMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _FloRssService_GetMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(FloRssHosting)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(FloRssServiceServer).QueryMessages(m, &floRssServiceQueryMessagesServer{stream})
+	return srv.(FloRssServiceServer).GetMessages(m, &floRssServiceGetMessagesServer{stream})
 }
 
-type FloRssService_QueryMessagesServer interface {
+type FloRssService_GetMessagesServer interface {
 	Send(*FLO_MESSAGE) error
 	grpc.ServerStream
 }
 
-type floRssServiceQueryMessagesServer struct {
+type floRssServiceGetMessagesServer struct {
 	grpc.ServerStream
 }
 
-func (x *floRssServiceQueryMessagesServer) Send(m *FLO_MESSAGE) error {
+func (x *floRssServiceGetMessagesServer) Send(m *FLO_MESSAGE) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -410,8 +410,8 @@ var FloRssService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "QueryMessages",
-			Handler:       _FloRssService_QueryMessages_Handler,
+			StreamName:    "GetMessages",
+			Handler:       _FloRssService_GetMessages_Handler,
 			ServerStreams: true,
 		},
 	},

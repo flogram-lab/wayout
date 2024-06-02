@@ -8,13 +8,15 @@ option go_package = "github.com/flogram-lab/wayout/flo_tg/proto";
 // TODO: telegram message attachments
 
 enum FLAGS {
-   V1 = 0;
+   INVALID_FLAG = 0;
 
-   Tg = 1;
-   FromUser = 2;
-   FromGroup = 3;
-   FromChannel = 4;
-   FromChannelPublic = 5;
+   V1 = 1;
+
+   Tg = 2;
+   FromUser = 3;
+   FromGroup = 4;
+   FromChannel = 5;
+   FromChannelPublic = 6;
 }
 
 message FLO_SOURCE {
@@ -22,7 +24,7 @@ message FLO_SOURCE {
 
    int64 from_peer_id = 2;
    int64 to_peer_id = 3;
-   string topic_uid = 4;
+   string source_uid = 4;
    string title = 5;
 }
 
@@ -31,12 +33,12 @@ message FLO_MESSAGE {
 
    int64 from_peer_id = 2;
    int64 to_peer_id = 3;
-   google.protobuf.Timestamp created_at = 4;
-   string title = 5;
-   string text = 6;
-   string topic_uid = 7;
-
-   repeated string message_links = 8;
+   string source_uid = 4;
+   string message_uid = 5;
+   google.protobuf.Timestamp created_at = 6;
+   string title = 7;
+   string text = 8;
+   repeated string message_links = 9;
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -62,7 +64,7 @@ service FloRssService {
    rpc GetFeeds(google.protobuf.Empty) returns (stream FloRssHosting);
    rpc CreateFeed(FloRssCreate) returns (FloRssHosting);
    rpc DeleteFeed(FloRssHosting) returns (google.protobuf.Empty);
-   rpc QueryMessages(FloRssHosting) returns (stream FLO_MESSAGE);
+   rpc GetMessages(FloRssHosting) returns (stream FLO_MESSAGE);
 }
 
 message FloRssHosting {

@@ -11,4 +11,4 @@ FROM swift:5.8.1-slim
     
 COPY --from=builder /usr/local/flogram /usr/local/flogram
 
-ENTRYPOINT /usr/local/flogram/wayout-cli
+ENTRYPOINT /usr/local/flogram/flo_rss
