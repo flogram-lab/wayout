@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type FlotgServiceClient interface {
 	GetChats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (FlotgService_GetChatsClient, error)
 	SetMonitoring(ctx context.Context, in *FlotgMonitor, opts ...grpc.CallOption) (*FlotgMonitor, error)
+	GetMessages(ctx context.Context, in *FlotgMessagesRequest, opts ...grpc.CallOption) (FlotgService_GetMessagesClient, error)
 }
 
 type flotgServiceClient struct {
@@ -76,12 +77,45 @@ func (c *flotgServiceClient) SetMonitoring(ctx context.Context, in *FlotgMonitor
 	return out, nil
 }
 
+func (c *flotgServiceClient) GetMessages(ctx context.Context, in *FlotgMessagesRequest, opts ...grpc.CallOption) (FlotgService_GetMessagesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &FlotgService_ServiceDesc.Streams[1], "/FlotgService/GetMessages", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &flotgServiceGetMessagesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type FlotgService_GetMessagesClient interface {
+	Recv() (*FLO_MESSAGE, error)
+	grpc.ClientStream
+}
+
+type flotgServiceGetMessagesClient struct {
+	grpc.ClientStream
+}
+
+func (x *flotgServiceGetMessagesClient) Recv() (*FLO_MESSAGE, error) {
+	m := new(FLO_MESSAGE)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // FlotgServiceServer is the server API for FlotgService service.
 // All implementations must embed UnimplementedFlotgServiceServer
 // for forward compatibility
 type FlotgServiceServer interface {
 	GetChats(*emptypb.Empty, FlotgService_GetChatsServer) error
 	SetMonitoring(context.Context, *FlotgMonitor) (*FlotgMonitor, error)
+	GetMessages(*FlotgMessagesRequest, FlotgService_GetMessagesServer) error
 	mustEmbedUnimplementedFlotgServiceServer()
 }
 
@@ -94,6 +128,9 @@ func (UnimplementedFlotgServiceServer) GetChats(*emptypb.Empty, FlotgService_Get
 }
 func (UnimplementedFlotgServiceServer) SetMonitoring(context.Context, *FlotgMonitor) (*FlotgMonitor, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetMonitoring not implemented")
+}
+func (UnimplementedFlotgServiceServer) GetMessages(*FlotgMessagesRequest, FlotgService_GetMessagesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
 }
 func (UnimplementedFlotgServiceServer) mustEmbedUnimplementedFlotgServiceServer() {}
 
@@ -147,6 +184,27 @@ func _FlotgService_SetMonitoring_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FlotgService_GetMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FlotgMessagesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FlotgServiceServer).GetMessages(m, &flotgServiceGetMessagesServer{stream})
+}
+
+type FlotgService_GetMessagesServer interface {
+	Send(*FLO_MESSAGE) error
+	grpc.ServerStream
+}
+
+type flotgServiceGetMessagesServer struct {
+	grpc.ServerStream
+}
+
+func (x *flotgServiceGetMessagesServer) Send(m *FLO_MESSAGE) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // FlotgService_ServiceDesc is the grpc.ServiceDesc for FlotgService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -165,6 +223,11 @@ var FlotgService_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _FlotgService_GetChats_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "GetMessages",
+			Handler:       _FlotgService_GetMessages_Handler,
+			ServerStreams: true,
+		},
 	},
 	Metadata: "flogram.proto",
 }
@@ -174,9 +237,9 @@ var FlotgService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FloRssServiceClient interface {
 	GetFeeds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (FloRssService_GetFeedsClient, error)
-	CreateFeed(ctx context.Context, in *FloRssCreate, opts ...grpc.CallOption) (*FloRssHosting, error)
-	DeleteFeed(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error)
+	CreateFeed(ctx context.Context, in *FloRssCreate, opts ...grpc.CallOption) (*FloSyndicationFeed, error)
+	DeleteFeed(ctx context.Context, in *FloSyndicationFeed, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetMessages(ctx context.Context, in *FloSyndicationFeed, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error)
 }
 
 type floRssServiceClient struct {
@@ -203,7 +266,7 @@ func (c *floRssServiceClient) GetFeeds(ctx context.Context, in *emptypb.Empty, o
 }
 
 type FloRssService_GetFeedsClient interface {
-	Recv() (*FloRssHosting, error)
+	Recv() (*FloSyndicationFeed, error)
 	grpc.ClientStream
 }
 
@@ -211,16 +274,16 @@ type floRssServiceGetFeedsClient struct {
 	grpc.ClientStream
 }
 
-func (x *floRssServiceGetFeedsClient) Recv() (*FloRssHosting, error) {
-	m := new(FloRssHosting)
+func (x *floRssServiceGetFeedsClient) Recv() (*FloSyndicationFeed, error) {
+	m := new(FloSyndicationFeed)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *floRssServiceClient) CreateFeed(ctx context.Context, in *FloRssCreate, opts ...grpc.CallOption) (*FloRssHosting, error) {
-	out := new(FloRssHosting)
+func (c *floRssServiceClient) CreateFeed(ctx context.Context, in *FloRssCreate, opts ...grpc.CallOption) (*FloSyndicationFeed, error) {
+	out := new(FloSyndicationFeed)
 	err := c.cc.Invoke(ctx, "/FloRssService/CreateFeed", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -228,7 +291,7 @@ func (c *floRssServiceClient) CreateFeed(ctx context.Context, in *FloRssCreate, 
 	return out, nil
 }
 
-func (c *floRssServiceClient) DeleteFeed(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *floRssServiceClient) DeleteFeed(ctx context.Context, in *FloSyndicationFeed, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/FloRssService/DeleteFeed", in, out, opts...)
 	if err != nil {
@@ -237,7 +300,7 @@ func (c *floRssServiceClient) DeleteFeed(ctx context.Context, in *FloRssHosting,
 	return out, nil
 }
 
-func (c *floRssServiceClient) GetMessages(ctx context.Context, in *FloRssHosting, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error) {
+func (c *floRssServiceClient) GetMessages(ctx context.Context, in *FloSyndicationFeed, opts ...grpc.CallOption) (FloRssService_GetMessagesClient, error) {
 	stream, err := c.cc.NewStream(ctx, &FloRssService_ServiceDesc.Streams[1], "/FloRssService/GetMessages", opts...)
 	if err != nil {
 		return nil, err
@@ -274,9 +337,9 @@ func (x *floRssServiceGetMessagesClient) Recv() (*FLO_MESSAGE, error) {
 // for forward compatibility
 type FloRssServiceServer interface {
 	GetFeeds(*emptypb.Empty, FloRssService_GetFeedsServer) error
-	CreateFeed(context.Context, *FloRssCreate) (*FloRssHosting, error)
-	DeleteFeed(context.Context, *FloRssHosting) (*emptypb.Empty, error)
-	GetMessages(*FloRssHosting, FloRssService_GetMessagesServer) error
+	CreateFeed(context.Context, *FloRssCreate) (*FloSyndicationFeed, error)
+	DeleteFeed(context.Context, *FloSyndicationFeed) (*emptypb.Empty, error)
+	GetMessages(*FloSyndicationFeed, FloRssService_GetMessagesServer) error
 	mustEmbedUnimplementedFloRssServiceServer()
 }
 
@@ -287,13 +350,13 @@ type UnimplementedFloRssServiceServer struct {
 func (UnimplementedFloRssServiceServer) GetFeeds(*emptypb.Empty, FloRssService_GetFeedsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetFeeds not implemented")
 }
-func (UnimplementedFloRssServiceServer) CreateFeed(context.Context, *FloRssCreate) (*FloRssHosting, error) {
+func (UnimplementedFloRssServiceServer) CreateFeed(context.Context, *FloRssCreate) (*FloSyndicationFeed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateFeed not implemented")
 }
-func (UnimplementedFloRssServiceServer) DeleteFeed(context.Context, *FloRssHosting) (*emptypb.Empty, error) {
+func (UnimplementedFloRssServiceServer) DeleteFeed(context.Context, *FloSyndicationFeed) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFeed not implemented")
 }
-func (UnimplementedFloRssServiceServer) GetMessages(*FloRssHosting, FloRssService_GetMessagesServer) error {
+func (UnimplementedFloRssServiceServer) GetMessages(*FloSyndicationFeed, FloRssService_GetMessagesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
 }
 func (UnimplementedFloRssServiceServer) mustEmbedUnimplementedFloRssServiceServer() {}
@@ -318,7 +381,7 @@ func _FloRssService_GetFeeds_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type FloRssService_GetFeedsServer interface {
-	Send(*FloRssHosting) error
+	Send(*FloSyndicationFeed) error
 	grpc.ServerStream
 }
 
@@ -326,7 +389,7 @@ type floRssServiceGetFeedsServer struct {
 	grpc.ServerStream
 }
 
-func (x *floRssServiceGetFeedsServer) Send(m *FloRssHosting) error {
+func (x *floRssServiceGetFeedsServer) Send(m *FloSyndicationFeed) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -349,7 +412,7 @@ func _FloRssService_CreateFeed_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _FloRssService_DeleteFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FloRssHosting)
+	in := new(FloSyndicationFeed)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -361,13 +424,13 @@ func _FloRssService_DeleteFeed_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/FloRssService/DeleteFeed",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FloRssServiceServer).DeleteFeed(ctx, req.(*FloRssHosting))
+		return srv.(FloRssServiceServer).DeleteFeed(ctx, req.(*FloSyndicationFeed))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _FloRssService_GetMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(FloRssHosting)
+	m := new(FloSyndicationFeed)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

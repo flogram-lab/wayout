@@ -146,7 +146,7 @@ public struct FlotgMonitor {
 
   public var fromPeerID: Int64 = 0
 
-  public var topicUid: String = String()
+  public var sourceUid: String = String()
 
   public var monitoringEnabled: Bool = false
 
@@ -155,14 +155,39 @@ public struct FlotgMonitor {
   public init() {}
 }
 
-public struct FloRssHosting {
+public struct FlotgMessagesRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var flags: Int32 = 0
 
-  public var topicUid: String = String()
+  public var sourceUid: [String] = []
+
+  public var messagesSince: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {return _messagesSince ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_messagesSince = newValue}
+  }
+  /// Returns true if `messagesSince` has been explicitly set.
+  public var hasMessagesSince: Bool {return self._messagesSince != nil}
+  /// Clears the value of `messagesSince`. Subsequent reads from it will return its default value.
+  public mutating func clearMessagesSince() {self._messagesSince = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _messagesSince: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+}
+
+public struct FloSyndicationFeed {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var flags: Int32 = 0
+
+  public var sourceUid: String = String()
 
   public var title: String = String()
 
@@ -182,7 +207,7 @@ public struct FloRssCreate {
 
   public var flags: Int32 = 0
 
-  public var topicUid: String = String()
+  public var sourceUid: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -194,7 +219,8 @@ extension FLAGS: @unchecked Sendable {}
 extension FLO_SOURCE: @unchecked Sendable {}
 extension FLO_MESSAGE: @unchecked Sendable {}
 extension FlotgMonitor: @unchecked Sendable {}
-extension FloRssHosting: @unchecked Sendable {}
+extension FlotgMessagesRequest: @unchecked Sendable {}
+extension FloSyndicationFeed: @unchecked Sendable {}
 extension FloRssCreate: @unchecked Sendable {}
 #endif  // swift(>=5.5) && canImport(_Concurrency)
 
@@ -357,7 +383,7 @@ extension FlotgMonitor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
     2: .standard(proto: "from_peer_id"),
-    3: .standard(proto: "topic_uid"),
+    3: .standard(proto: "source_uid"),
     4: .standard(proto: "monitoring_enabled"),
   ]
 
@@ -369,7 +395,7 @@ extension FlotgMonitor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
       case 2: try { try decoder.decodeSingularInt64Field(value: &self.fromPeerID) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.topicUid) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.monitoringEnabled) }()
       default: break
       }
@@ -383,8 +409,8 @@ extension FlotgMonitor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
     if self.fromPeerID != 0 {
       try visitor.visitSingularInt64Field(value: self.fromPeerID, fieldNumber: 2)
     }
-    if !self.topicUid.isEmpty {
-      try visitor.visitSingularStringField(value: self.topicUid, fieldNumber: 3)
+    if !self.sourceUid.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 3)
     }
     if self.monitoringEnabled != false {
       try visitor.visitSingularBoolField(value: self.monitoringEnabled, fieldNumber: 4)
@@ -395,18 +421,66 @@ extension FlotgMonitor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
   public static func ==(lhs: FlotgMonitor, rhs: FlotgMonitor) -> Bool {
     if lhs.flags != rhs.flags {return false}
     if lhs.fromPeerID != rhs.fromPeerID {return false}
-    if lhs.topicUid != rhs.topicUid {return false}
+    if lhs.sourceUid != rhs.sourceUid {return false}
     if lhs.monitoringEnabled != rhs.monitoringEnabled {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension FloRssHosting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "FloRssHosting"
+extension FlotgMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "FlotgMessagesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
-    2: .standard(proto: "topic_uid"),
+    2: .standard(proto: "source_uid"),
+    3: .standard(proto: "messages_since"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
+      case 2: try { try decoder.decodeRepeatedStringField(value: &self.sourceUid) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._messagesSince) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.flags != 0 {
+      try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
+    }
+    if !self.sourceUid.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.sourceUid, fieldNumber: 2)
+    }
+    try { if let v = self._messagesSince {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: FlotgMessagesRequest, rhs: FlotgMessagesRequest) -> Bool {
+    if lhs.flags != rhs.flags {return false}
+    if lhs.sourceUid != rhs.sourceUid {return false}
+    if lhs._messagesSince != rhs._messagesSince {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension FloSyndicationFeed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "FloSyndicationFeed"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "flags"),
+    2: .standard(proto: "source_uid"),
     3: .same(proto: "title"),
     4: .standard(proto: "from_peer_id"),
     5: .standard(proto: "rss_uri"),
@@ -419,7 +493,7 @@ extension FloRssHosting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.topicUid) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.title) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.fromPeerID) }()
       case 5: try { try decoder.decodeSingularStringField(value: &self.rssUri) }()
@@ -432,8 +506,8 @@ extension FloRssHosting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
-    if !self.topicUid.isEmpty {
-      try visitor.visitSingularStringField(value: self.topicUid, fieldNumber: 2)
+    if !self.sourceUid.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 2)
     }
     if !self.title.isEmpty {
       try visitor.visitSingularStringField(value: self.title, fieldNumber: 3)
@@ -447,9 +521,9 @@ extension FloRssHosting: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: FloRssHosting, rhs: FloRssHosting) -> Bool {
+  public static func ==(lhs: FloSyndicationFeed, rhs: FloSyndicationFeed) -> Bool {
     if lhs.flags != rhs.flags {return false}
-    if lhs.topicUid != rhs.topicUid {return false}
+    if lhs.sourceUid != rhs.sourceUid {return false}
     if lhs.title != rhs.title {return false}
     if lhs.fromPeerID != rhs.fromPeerID {return false}
     if lhs.rssUri != rhs.rssUri {return false}
@@ -462,7 +536,7 @@ extension FloRssCreate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
   public static let protoMessageName: String = "FloRssCreate"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
-    2: .standard(proto: "topic_uid"),
+    2: .standard(proto: "source_uid"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -472,7 +546,7 @@ extension FloRssCreate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.topicUid) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
       default: break
       }
     }
@@ -482,15 +556,15 @@ extension FloRssCreate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
-    if !self.topicUid.isEmpty {
-      try visitor.visitSingularStringField(value: self.topicUid, fieldNumber: 2)
+    if !self.sourceUid.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: FloRssCreate, rhs: FloRssCreate) -> Bool {
     if lhs.flags != rhs.flags {return false}
-    if lhs.topicUid != rhs.topicUid {return false}
+    if lhs.sourceUid != rhs.sourceUid {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
