@@ -3,7 +3,7 @@
 
     "dockerComposeFile": [
       "../../docker-compose.yml",
-      "../docker-compose.devcontainer.yml"
+      "../devcontainers.yml"
     ],
     "service": "flo_rss-devcontainer",
     "overrideCommand": true,

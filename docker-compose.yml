@@ -14,29 +14,6 @@ networks:
 
 services:
 
-  protoc-go:
-    profiles:
-      - protoc
-    image: ghcr.io/flogram-lab/wayout-protoc-go:1.0
-    build:
-      context: .
-      dockerfile: protoc.go.Dockerfile
-    volumes:
-      - ./:/source
-      - ./flo_tg/proto:/out/go
-    restart: no
-
-  protoc-swift:
-    profiles:
-      - protoc
-    image: ghcr.io/flogram-lab/wayout-protoc-swift:1.0
-    build:
-      context: .
-      dockerfile: protoc.swift.Dockerfile
-    volumes:
-      - ./:/source
-    restart: no
-
   mongodb:
     profiles:
       - bedrock
@@ -44,7 +21,7 @@ services:
     image: "mongo:7.0.6"
     volumes:
       - mongodb_data:/data/db
-    restart: on-failure
+    restart: always
     networks:
       - default
       - flogram-internal
@@ -117,6 +94,29 @@ services:
     restart: on-failure
     networks:
       - flogram-internal
+
+  protoc-go:
+    profiles:
+      - protoc
+    image: ghcr.io/flogram-lab/wayout-protoc-go:1.0
+    build:
+      context: .
+      dockerfile: protoc.go.Dockerfile
+    volumes:
+      - ./:/source
+      - ./flo_tg/proto:/out/go
+    restart: no
+
+  protoc-swift:
+    profiles:
+      - protoc
+    image: ghcr.io/flogram-lab/wayout-protoc-swift:1.0
+    build:
+      context: .
+      dockerfile: protoc.swift.Dockerfile
+    volumes:
+      - ./:/source
+    restart: no
 
   wayout-cli:
     profiles:

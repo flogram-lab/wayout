@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/flogram-lab/wayout/flo_tg/proto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -39,4 +40,12 @@ func (storage *Storage) Close() {
 	if err := storage.mgClient.Disconnect(context.TODO()); err != nil {
 		log.Println("ERROR Close() mmongoogno connection", err)
 	}
+}
+
+func (storage *Storage) SaveSource(source *proto.FLO_SOURCE) error {
+	return nil // FIXME
+}
+
+func (storage *Storage) SaveMessage(message *proto.FLO_MESSAGE) error {
+	return // FIXME
 }

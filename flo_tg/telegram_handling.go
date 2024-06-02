@@ -13,12 +13,14 @@ import (
 type telegramHandling struct {
 	bootstrap Bootstrap
 	peerDB    *peeble.PeerStorage
+	converter *converter
 }
 
 func newTelegramHandling(bootstrap Bootstrap, peerDB *peeble.PeerStorage) *telegramHandling {
 	return &telegramHandling{
 		bootstrap: bootstrap,
 		peerDB:    peerDB,
+		converter: newConverter(bootstrap),
 	}
 }
 
@@ -29,52 +31,73 @@ func (handling *telegramHandling) AddHandlers(dispatcher tg.UpdateDispatcher) {
 
 func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage) error {
-		log.Println("User message received!")
-		msg, ok := u.Message.(*tg.Message)
-		if !ok {
-			return nil
-		}
-
-		hasPeer := true
-		_, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
-		if err != nil {
-			hasPeer = false
-			log.Println("User Peer not found in database", msg.GetPeerID())
-		}
-
-		log.Println("Message FromID", msg.FromID, msg.Message)
-
-		handling.bootstrap.Logging.Message(gelf.LOG_WARNING, "Telegram", "User message", map[string]interface{}{
-			"msg_from_id": msg.FromID,
-			"has_peer":    hasPeer,
-		})
-
-		return nil
+		return handling.genericHandleMessage("new message handler", ctx, e, u)
 	}
 }
 
 func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
-		log.Println("Channel message received!")
-		msg, ok := u.Message.(*tg.Message)
-		if !ok {
-			return nil
-		}
+		return handling.genericHandleMessage("channel message handler", ctx, e, u)
+	}
+}
 
-		hasPeer := true
-		_, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
-		if err != nil {
-			hasPeer = false
-			log.Println("Channel Peer not found in database", msg.GetPeerID())
-		}
 
-		log.Println("Message FromID", msg.FromID, msg.Message)
+func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
 
-		handling.bootstrap.Logging.Message(gelf.LOG_WARNING, "Telegram", "Channel message", map[string]interface{}{
-			"msg_from_id": msg.FromID,
-			"has_peer":    hasPeer,
-		})
+	logInfo := map[string]interface{}{
+		"handler":  handler,
+		"entities": e,
+	}
+
+	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message received", logInfo)
+
+	msg, ok := u.Message.(*tg.Message)
+	if !ok {
+
+		handling.bootstrap.Logging.Message(gelf.LOG_ERR, "Telegram", "Message lost! Cast type failed (this should not happen, really)", logInfo)
 
 		return nil
 	}
+
+	logInfo = map[string]interface{}{
+		"handler":    handler,
+		"entities": e,
+		"from_id":     msg.FromID,
+		"message":     msg.Message,
+		"peer_id":     msg.PeerID,
+		"post_author": msg.PostAuthor,
+		"message_uid": msg.ID,
+		"is_post":     msg.Post,
+	}
+
+	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
+	if err != nil {
+
+		handling.bootstrap.Logging.Message(gelf.LOG_CRIT, "Telegram", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
+			"err": err.Error(),
+		})
+
+		log.Println("Chat peer not found in database", msg.GetPeerID())
+		return err
+	}
+
+	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message received", logInfo)
+
+	source := handling.converter.makeSource(msg, peer, e)
+	message := handling.converter.makeMessage(msg, source)
+
+	logInfo["source_uid"] = source.SourceUID;
+	logInfo["message_uid"] = message.MessageUID;
+
+	err = handling.bootstrap.Storage.saveMessage(source, message)
+
+	if err != nil {
+		handling.bootstrap.Logging.Message(gelf.LOG_ERROR, "Telegram", "Message storage failed", logInfo, map[string]interface{}{
+			"err": err.Error(),
+		})
+	}
+
+	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message saved", logInfo)
+
+	return err
 }

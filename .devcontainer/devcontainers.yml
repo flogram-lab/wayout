@@ -1,33 +1,41 @@
 
 # Extension to main docker-compose.yml
 
+volumes:
+  vscodesvr-lib:
+  vscodesvr-cli:
+  vscodesvr-rss:
+  vscodesvr-tg:
+
 services:
 
   wayout-lib-devcontainer:
     build: 
-      context: wayout-lib
-      dockerfile: devcontainer.Dockerfile
+      context: .
+      dockerfile: devcontainer.swift.Dockerfile
     volumes:
       - ./wayout-lib:/root/wayout-lib
+      - vscodesvr-lib:/root/.vscode-server
     networks:
       - flogram-internal
 
   flo_rss-devcontainer:
     build: 
-      context: flo_rss
-      dockerfile: devcontainer.Dockerfile
+      context: .
+      dockerfile: devcontainer.swift.Dockerfile
     environment:
       WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
+      - vscodesvr-rss:/root/.vscode-server
     networks:
       - flogram-internal
 
   flo_tg-devcontainer:
     build: 
-      context: flo_tg
-      dockerfile: devcontainer.Dockerfile
+      context: .
+      dockerfile: devcontainer.go.Dockerfile
     env_file: .env
     environment:
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
@@ -40,5 +48,6 @@ services:
     volumes:
       - telegram-session:/var/run/telegram-session
       - ./flo_tg:/root/flo_tg
+      - vscodesvr-tg:/root/.vscode-server
     networks:
       - flogram-internal
