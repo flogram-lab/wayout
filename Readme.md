@@ -2,6 +2,29 @@
 
 Read Telegram Messenger content with simple RPC API/RSS.
 
+### Blueprint
+
+![FlogramBlueprint](FlogramBlueprint.drawio.png)
+
+### Requirements
+
+- Docker
+
+Min RAM:
+
+ - \> 4 GB (run without build)
+ - \> 8 GB (build/development)
+
+Min HDD
+
+ - ~ 5 GB (run without build)
+ - ~ 15 GB (build/development)
+
+ ##### Developing
+
+  - Visual Studio Code
+  - Devcontainers extension
+
 # Installation
 
       $ docker network create --driver bridge flogram-internal
@@ -14,13 +37,9 @@ Before running Wayout, I had to:
 
  2. Add **GELF TCP** source in **System > Inputs** with default port. This allows services to log messages to Graylog, which is important for error and problem tracing.
 
- **It is important to ensure that phone number is authorized by running flo_tg in interactive mode:**
+ - If I need to compile images from sources
 
-      $ docker-compose run -it flo_tg
-
-### Blueprint
-
-![FlogramBlueprint](FlogramBlueprint.drawio.png)
+      $ docker-compose --profile main build
 
 ## Configuration
 
@@ -30,13 +49,9 @@ I copied `.env.example` as `.env` to create configuration.
  
  I've [created my Telegram App](https://core.telegram.org/api/obtaining_api_id) and saved APP_ tokens given by Telegram to the `.env` file.
 
- - Wayout itself is compiled from source with command:
-
-      $ docker-compose --profile main build
-
 ## Run
 
- - When I change `TG_PHONE` authorization in Telegram in interactive shell was required.
+ - When I change `TG_PHONE` authorization in Telegram using interactive mode is required.
 
       $ docker-compose run -it flo_tg
 
@@ -48,6 +63,8 @@ When it did not ask to enter SMS code, I am ready to go in non-interactive (norm
 -----
 
 ### CLI
+
+TODO: Installing CLI alias to compose run
 
 flo_tg
 
@@ -78,8 +95,6 @@ Basic `docker-compose.yml` only exposes TCP/UDP ports of Graylog and its Datanod
 Containers linked to the `flogram-internal` bridged network can reach each other.
 
 ### Development
-
-***Devcontainers** extension must be used to edit, test, debug code in **Visual Studio Code** editor.
 
 #### Extending
 

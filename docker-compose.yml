@@ -17,6 +17,7 @@ services:
   protoc-go:
     profiles:
       - protoc
+    image: ghcr.io/flogram-lab/wayout-protoc-go:1.0
     build:
       context: .
       dockerfile: protoc.go.Dockerfile
@@ -28,6 +29,7 @@ services:
   protoc-swift:
     profiles:
       - protoc
+    image: ghcr.io/flogram-lab/wayout-protoc-swift:1.0
     build:
       context: .
       dockerfile: protoc.swift.Dockerfile
@@ -119,6 +121,7 @@ services:
   wayout-cli:
     profiles:
       - tool
+    image: ghcr.io/flogram-lab/wayout-wayout-cli:1.0
     build:
       context: .
       dockerfile: wayout-cli.Dockerfile
@@ -133,6 +136,7 @@ services:
   flo_tg:
     profiles:
       - main
+    image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
     build: flo_tg
     depends_on:
       - graylog
@@ -154,6 +158,7 @@ services:
   flo_rss:
     profiles:
       - main
+    image: ghcr.io/flogram-lab/wayout-flo_rss:1.0
     build:
       context: .
       dockerfile: flo_rss.Dockerfile

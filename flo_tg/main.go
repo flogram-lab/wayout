@@ -19,7 +19,7 @@ func main() {
 	svc := &service{bootstrap: bootstrap}
 	go svc.run()
 
-	if err := RunTelegram(ctx, bootstrap); err != nil {
+	if err := CreateAndRunTelegramClient(ctx, bootstrap); err != nil {
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
 			log.Println("\rContext cancelled. Done")
 			os.Exit(0)

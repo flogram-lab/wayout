@@ -31,7 +31,7 @@ import (
 	lj "gopkg.in/natefinch/lumberjack.v2"
 )
 
-func RunTelegram(ctx context.Context, bootstrap Bootstrap) error {
+func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error {
 
 	// Setting up logging to file with rotation.
 	//
@@ -61,6 +61,8 @@ func RunTelegram(ctx context.Context, bootstrap Bootstrap) error {
 	}
 	peerDB := pebble.NewPeerStorage(db)
 	lg.Info("Storage", zap.String("path", bootstrap.TgWorkFolder))
+
+	handling := newTelegramHandling(bootstrap, peerDB)
 
 	// Setting up client.
 	//
@@ -133,8 +135,6 @@ func RunTelegram(ctx context.Context, bootstrap Bootstrap) error {
 				zap.String("username", self.Username),
 				zap.Int64("id", self.ID),
 			)
-
-			handling := newTelegramHandling(bootstrap, peerDB)
 
 			handling.AddHandlers(dispatcher)
 
