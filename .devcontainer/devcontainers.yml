@@ -6,6 +6,8 @@ volumes:
   vscodesvr-cli:
   vscodesvr-rss:
   vscodesvr-tg:
+  gopkg:
+  gocache:
 
 services:
 
@@ -45,9 +47,13 @@ services:
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
       TG_SESSION_PATH: /var/run/telegram-session
+      GOCACHE: /go/cache
+      GOPATH: /go
     volumes:
       - telegram-session:/var/run/telegram-session
       - ./flo_tg:/root/flo_tg
       - vscodesvr-tg:/root/.vscode-server
+      - gopkg:/go/pkg
+      - gocache:/go/cache
     networks:
       - flogram-internal

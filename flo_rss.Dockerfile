@@ -1,4 +1,4 @@
-FROM swift:5.8.1 AS builder
+FROM swift:5.8.1-slim AS builder
 
 ADD ./flo_rss .
 ADD ./wayout-lib ./wayout-lib
