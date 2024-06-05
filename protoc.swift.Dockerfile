@@ -1,5 +1,5 @@
 
-FROM swift:5.8.1-slim
+FROM swift:5.8.1
 
 RUN apt update
 RUN apt install -y libprotobuf-dev protobuf-compiler git make
@@ -15,7 +15,6 @@ RUN (cd grpc-swift && swift build -c release --product protoc-gen-grpc-swift)
 RUN (cd grpc-swift/.build/release/ && cp protoc-gen-swift protoc-gen-grpc-swift /usr/bin/.)
 
 VOLUME /source
-VOLUME /out/swift
 
 RUN mkdir -p /out/swift
 

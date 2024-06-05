@@ -104,7 +104,6 @@ services:
       dockerfile: protoc.go.Dockerfile
     volumes:
       - ./:/source
-      - ./flo_tg/proto:/out/go
     restart: no
 
   protoc-swift:
