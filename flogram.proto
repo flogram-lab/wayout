@@ -6,39 +6,37 @@ import "google/protobuf/empty.proto";
 option go_package = "github.com/flogram-lab/wayout/flo_tg/proto";
 
 // TODO: telegram message attachments
+// todo forward tracking deep_from_id/source_uid/title/etc?
 
 enum FLAGS {
-   INVALID_FLAG = 0;
-
+   Invalid = 0;
    V1 = 1;
-
    Tg = 2;
-   FromUser = 3;
-   FromGroup = 4;
-   FromChannel = 5;
-   FromChannelPublic = 6;
+   User = 4;
+   Group = 8;
+   Channel = 16;
 }
 
 message FLO_SOURCE {
    int32 flags = 1;
 
-   int64 from_peer_id = 2;
-   int64 to_peer_id = 3;
-   string source_uid = 4;
-   string title = 5;
+   int64 deep_from_id = 2;
+   string source_uid = 3;
+   string title = 4;
 }
 
 message FLO_MESSAGE {
    int32 flags = 1;
 
-   int64 from_peer_id = 2;
-   int64 to_peer_id = 3;
-   string source_uid = 4;
+   int64 deep_from_id = 2;
+   string source_uid = 3;
+   string title = 4;
+
    string message_uid = 5;
    google.protobuf.Timestamp created_at = 6;
-   string title = 7;
-   string text = 8;
-   repeated string message_links = 9;
+   string text = 7;
+   
+   repeated string message_links = 8;
 }
 
 // ------------------------------------------------------------------------------------------------------

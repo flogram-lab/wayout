@@ -22,41 +22,38 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 
 public enum FLAGS: SwiftProtobuf.Enum {
   public typealias RawValue = Int
-  case invalidFlag // = 0
+  case invalid // = 0
   case v1 // = 1
   case tg // = 2
-  case fromUser // = 3
-  case fromGroup // = 4
-  case fromChannel // = 5
-  case fromChannelPublic // = 6
+  case user // = 4
+  case group // = 8
+  case channel // = 16
   case UNRECOGNIZED(Int)
 
   public init() {
-    self = .invalidFlag
+    self = .invalid
   }
 
   public init?(rawValue: Int) {
     switch rawValue {
-    case 0: self = .invalidFlag
+    case 0: self = .invalid
     case 1: self = .v1
     case 2: self = .tg
-    case 3: self = .fromUser
-    case 4: self = .fromGroup
-    case 5: self = .fromChannel
-    case 6: self = .fromChannelPublic
+    case 4: self = .user
+    case 8: self = .group
+    case 16: self = .channel
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
   public var rawValue: Int {
     switch self {
-    case .invalidFlag: return 0
+    case .invalid: return 0
     case .v1: return 1
     case .tg: return 2
-    case .fromUser: return 3
-    case .fromGroup: return 4
-    case .fromChannel: return 5
-    case .fromChannelPublic: return 6
+    case .user: return 4
+    case .group: return 8
+    case .channel: return 16
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -68,13 +65,12 @@ public enum FLAGS: SwiftProtobuf.Enum {
 extension FLAGS: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static let allCases: [FLAGS] = [
-    .invalidFlag,
+    .invalid,
     .v1,
     .tg,
-    .fromUser,
-    .fromGroup,
-    .fromChannel,
-    .fromChannelPublic,
+    .user,
+    .group,
+    .channel,
   ]
 }
 
@@ -87,9 +83,7 @@ public struct FLO_SOURCE {
 
   public var flags: Int32 = 0
 
-  public var fromPeerID: Int64 = 0
-
-  public var toPeerID: Int64 = 0
+  public var deepFromID: Int64 = 0
 
   public var sourceUid: String = String()
 
@@ -107,11 +101,11 @@ public struct FLO_MESSAGE {
 
   public var flags: Int32 = 0
 
-  public var fromPeerID: Int64 = 0
-
-  public var toPeerID: Int64 = 0
+  public var deepFromID: Int64 = 0
 
   public var sourceUid: String = String()
+
+  public var title: String = String()
 
   public var messageUid: String = String()
 
@@ -123,8 +117,6 @@ public struct FLO_MESSAGE {
   public var hasCreatedAt: Bool {return self._createdAt != nil}
   /// Clears the value of `createdAt`. Subsequent reads from it will return its default value.
   public mutating func clearCreatedAt() {self._createdAt = nil}
-
-  public var title: String = String()
 
   public var text: String = String()
 
@@ -228,13 +220,12 @@ extension FloRssCreate: @unchecked Sendable {}
 
 extension FLAGS: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "INVALID_FLAG"),
+    0: .same(proto: "Invalid"),
     1: .same(proto: "V1"),
     2: .same(proto: "Tg"),
-    3: .same(proto: "FromUser"),
-    4: .same(proto: "FromGroup"),
-    5: .same(proto: "FromChannel"),
-    6: .same(proto: "FromChannelPublic"),
+    4: .same(proto: "User"),
+    8: .same(proto: "Group"),
+    16: .same(proto: "Channel"),
   ]
 }
 
@@ -242,10 +233,9 @@ extension FLO_SOURCE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
   public static let protoMessageName: String = "FLO_SOURCE"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
-    2: .standard(proto: "from_peer_id"),
-    3: .standard(proto: "to_peer_id"),
-    4: .standard(proto: "source_uid"),
-    5: .same(proto: "title"),
+    2: .standard(proto: "deep_from_id"),
+    3: .standard(proto: "source_uid"),
+    4: .same(proto: "title"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -255,10 +245,9 @@ extension FLO_SOURCE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeSingularInt64Field(value: &self.fromPeerID) }()
-      case 3: try { try decoder.decodeSingularInt64Field(value: &self.toPeerID) }()
-      case 4: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
-      case 5: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 2: try { try decoder.decodeSingularInt64Field(value: &self.deepFromID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.title) }()
       default: break
       }
     }
@@ -268,25 +257,21 @@ extension FLO_SOURCE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementatio
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
-    if self.fromPeerID != 0 {
-      try visitor.visitSingularInt64Field(value: self.fromPeerID, fieldNumber: 2)
-    }
-    if self.toPeerID != 0 {
-      try visitor.visitSingularInt64Field(value: self.toPeerID, fieldNumber: 3)
+    if self.deepFromID != 0 {
+      try visitor.visitSingularInt64Field(value: self.deepFromID, fieldNumber: 2)
     }
     if !self.sourceUid.isEmpty {
-      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 4)
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 3)
     }
     if !self.title.isEmpty {
-      try visitor.visitSingularStringField(value: self.title, fieldNumber: 5)
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: FLO_SOURCE, rhs: FLO_SOURCE) -> Bool {
     if lhs.flags != rhs.flags {return false}
-    if lhs.fromPeerID != rhs.fromPeerID {return false}
-    if lhs.toPeerID != rhs.toPeerID {return false}
+    if lhs.deepFromID != rhs.deepFromID {return false}
     if lhs.sourceUid != rhs.sourceUid {return false}
     if lhs.title != rhs.title {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -298,14 +283,13 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
   public static let protoMessageName: String = "FLO_MESSAGE"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
-    2: .standard(proto: "from_peer_id"),
-    3: .standard(proto: "to_peer_id"),
-    4: .standard(proto: "source_uid"),
+    2: .standard(proto: "deep_from_id"),
+    3: .standard(proto: "source_uid"),
+    4: .same(proto: "title"),
     5: .standard(proto: "message_uid"),
     6: .standard(proto: "created_at"),
-    7: .same(proto: "title"),
-    8: .same(proto: "text"),
-    9: .standard(proto: "message_links"),
+    7: .same(proto: "text"),
+    8: .standard(proto: "message_links"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -315,14 +299,13 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeSingularInt64Field(value: &self.fromPeerID) }()
-      case 3: try { try decoder.decodeSingularInt64Field(value: &self.toPeerID) }()
-      case 4: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
+      case 2: try { try decoder.decodeSingularInt64Field(value: &self.deepFromID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.title) }()
       case 5: try { try decoder.decodeSingularStringField(value: &self.messageUid) }()
       case 6: try { try decoder.decodeSingularMessageField(value: &self._createdAt) }()
-      case 7: try { try decoder.decodeSingularStringField(value: &self.title) }()
-      case 8: try { try decoder.decodeSingularStringField(value: &self.text) }()
-      case 9: try { try decoder.decodeRepeatedStringField(value: &self.messageLinks) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 8: try { try decoder.decodeRepeatedStringField(value: &self.messageLinks) }()
       default: break
       }
     }
@@ -336,14 +319,14 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
-    if self.fromPeerID != 0 {
-      try visitor.visitSingularInt64Field(value: self.fromPeerID, fieldNumber: 2)
-    }
-    if self.toPeerID != 0 {
-      try visitor.visitSingularInt64Field(value: self.toPeerID, fieldNumber: 3)
+    if self.deepFromID != 0 {
+      try visitor.visitSingularInt64Field(value: self.deepFromID, fieldNumber: 2)
     }
     if !self.sourceUid.isEmpty {
-      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 4)
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 3)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 4)
     }
     if !self.messageUid.isEmpty {
       try visitor.visitSingularStringField(value: self.messageUid, fieldNumber: 5)
@@ -351,26 +334,22 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     try { if let v = self._createdAt {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
     } }()
-    if !self.title.isEmpty {
-      try visitor.visitSingularStringField(value: self.title, fieldNumber: 7)
-    }
     if !self.text.isEmpty {
-      try visitor.visitSingularStringField(value: self.text, fieldNumber: 8)
+      try visitor.visitSingularStringField(value: self.text, fieldNumber: 7)
     }
     if !self.messageLinks.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.messageLinks, fieldNumber: 9)
+      try visitor.visitRepeatedStringField(value: self.messageLinks, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: FLO_MESSAGE, rhs: FLO_MESSAGE) -> Bool {
     if lhs.flags != rhs.flags {return false}
-    if lhs.fromPeerID != rhs.fromPeerID {return false}
-    if lhs.toPeerID != rhs.toPeerID {return false}
+    if lhs.deepFromID != rhs.deepFromID {return false}
     if lhs.sourceUid != rhs.sourceUid {return false}
+    if lhs.title != rhs.title {return false}
     if lhs.messageUid != rhs.messageUid {return false}
     if lhs._createdAt != rhs._createdAt {return false}
-    if lhs.title != rhs.title {return false}
     if lhs.text != rhs.text {return false}
     if lhs.messageLinks != rhs.messageLinks {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
