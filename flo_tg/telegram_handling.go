@@ -47,7 +47,7 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 		msg, ok := u.Message.(*tg.Message)
 		if !ok {
 
-			logger.Message(gelf.LOG_ERR, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+			logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
 
 			return nil
 		}
@@ -71,7 +71,7 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 		msg, ok := u.Message.(*tg.Message)
 		if !ok {
 
-			logger.Message(gelf.LOG_ERR, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+			logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
 
 			return nil
 		}
@@ -103,7 +103,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
-		logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
 
@@ -115,13 +115,13 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 
 	source, deepFromId := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoSource", logInfo, map[string]interface{}{
 		"debug_rpc": handling.converter.encodeToJson(source, false),
 	})
 
 	message := handling.converter.makeProtoMessage(msg, source, deepFromId)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoMessage", logInfo, map[string]interface{}{
 		"debug_rpc": handling.converter.encodeToJson(message, false),
 	})
 
@@ -138,9 +138,10 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["sourceRefId"] = sourceRefId
 
 	if err != nil {
-		logger.Message(gelf.LOG_ERR, "telegram_handling", "Source storage failed", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Source storage failed", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
+		return err
 	} else {
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved", logInfo)
 	}
@@ -149,9 +150,10 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["message_ref_id"] = messageRefId
 
 	if err != nil {
-		logger.Message(gelf.LOG_ERR, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
+		return err
 	} else {
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message saved", logInfo)
 	}
