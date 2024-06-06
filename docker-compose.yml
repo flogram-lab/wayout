@@ -17,7 +17,6 @@ services:
   mongodb:
     profiles:
       - bedrock
-      - main
     image: "mongo:7.0.6"
     volumes:
       - mongodb_data:/data/db
@@ -30,7 +29,6 @@ services:
   datanode:
     profiles:
       - bedrock
-      - main
     image: "${DATANODE_IMAGE:-graylog/graylog-datanode:5.2}"
     depends_on:
       - mongodb
@@ -60,7 +58,6 @@ services:
   graylog:
     profiles:
       - bedrock
-      - main
     image: "${GRAYLOG_IMAGE:-graylog/graylog:5.2}"
     depends_on:
       - mongodb
@@ -137,9 +134,6 @@ services:
       - main
     image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
     build: flo_tg
-    depends_on:
-      - graylog
-      - mongodb
     environment:
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
       GRAYLOG_ADDRESS: graylog:12201
@@ -161,9 +155,6 @@ services:
     build:
       context: .
       dockerfile: flo_rss.Dockerfile
-    depends_on:
-      - graylog
-      - mongodb
     restart: on-failure
     networks:
       - flogram-internal
