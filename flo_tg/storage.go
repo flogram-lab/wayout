@@ -17,7 +17,8 @@ import (
 type StorageObjectID string
 
 const (
-	db_collection_sources = "tgv1-sources"
+	db_collection_sources           = "tgv1-sources"
+	STORAGE_BINARY_RPC_SUBTYPE byte = 255
 )
 
 type Storage struct {
@@ -29,12 +30,15 @@ type storedSource struct {
 	ID        primitive.ObjectID `bson:"_id"`
 	CreatedAt primitive.DateTime `bson:"created_at"`
 	Source    *proto.FLO_SOURCE  `bson:"source"`
+	SourceRPC primitive.Binary   `bson:"source_rpc"`
 }
 
 type storedMessage struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	CreatedAt primitive.DateTime `bson:"created_at"`
-	Message   *proto.FLO_MESSAGE `bson:"message"`
+	ID         primitive.ObjectID `bson:"_id"`
+	CreatedAt  primitive.DateTime `bson:"created_at"`
+	MessageAt  primitive.DateTime `bson:"message_at"`
+	Message    *proto.FLO_MESSAGE `bson:"message"`
+	MessageRPC primitive.Binary   `bson:"message_rpc"`
 }
 
 func NewStorageMongo(uri string, databaseName string) *Storage {
@@ -64,11 +68,11 @@ func (storage *Storage) Close() {
 	}
 }
 
-func (storage *Storage) storeSource(ctx context.Context, source *proto.FLO_SOURCE) (StorageObjectID, error) {
+func (storage *Storage) storeSource(ctx context.Context, c *converter, source *proto.FLO_SOURCE) (StorageObjectID, error) {
 
 	db := storage.mgClient.Database(storage.dbName)
 
-	err := storage.ensureCollection(ctx, db_collection_sources)
+	err := storage.ensureCollection(ctx, db_collection_sources, "created_at")
 	if err != nil {
 		return "", errors.Wrapf(err, "ensureCollection failed for %s", db_collection_sources)
 	}
@@ -79,6 +83,10 @@ func (storage *Storage) storeSource(ctx context.Context, source *proto.FLO_SOURC
 		ID:        primitive.NewObjectID(),
 		CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC()),
 		Source:    source,
+		SourceRPC: primitive.Binary{
+			Subtype: STORAGE_BINARY_RPC_SUBTYPE,
+			Data:    c.encodeRpcToBytes(source),
+		},
 	}
 
 	res, err := col.InsertOne(ctx, &m)
@@ -94,12 +102,12 @@ func (storage *Storage) storeSource(ctx context.Context, source *proto.FLO_SOURC
 	return StorageObjectID(id.Hex()), err
 }
 
-func (storage *Storage) StoreMessage(ctx context.Context, source *proto.FLO_SOURCE, message *proto.FLO_MESSAGE) (StorageObjectID, error) {
+func (storage *Storage) StoreMessage(ctx context.Context, c *converter, source *proto.FLO_SOURCE, message *proto.FLO_MESSAGE) (StorageObjectID, error) {
 
 	db := storage.mgClient.Database(storage.dbName)
 
 	colName := strings.Trim(source.SourceUid, "- ")
-	err := storage.ensureCollection(ctx, colName)
+	err := storage.ensureCollection(ctx, colName, "message_at")
 	if err != nil {
 		return "", errors.Wrapf(err, "ensureCollection failed for %s", colName)
 	}
@@ -109,7 +117,12 @@ func (storage *Storage) StoreMessage(ctx context.Context, source *proto.FLO_SOUR
 	m := storedMessage{
 		ID:        primitive.NewObjectID(),
 		CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC()),
+		MessageAt: primitive.NewDateTimeFromTime(message.CreatedAt.AsTime()),
 		Message:   message,
+		MessageRPC: primitive.Binary{
+			Subtype: STORAGE_BINARY_RPC_SUBTYPE,
+			Data:    c.encodeRpcToBytes(message),
+		},
 	}
 
 	res, err := col.InsertOne(ctx, &m)
@@ -125,7 +138,7 @@ func (storage *Storage) StoreMessage(ctx context.Context, source *proto.FLO_SOUR
 	return StorageObjectID(id.Hex()), err
 }
 
-func (storage *Storage) ensureCollection(ctx context.Context, colName string) error {
+func (storage *Storage) ensureCollection(ctx context.Context, colName, timeField string) error {
 
 	db := storage.mgClient.Database(storage.dbName)
 
@@ -148,7 +161,7 @@ func (storage *Storage) ensureCollection(ctx context.Context, colName string) er
 			SetTimeSeriesOptions(options.TimeSeries().
 				SetGranularity("hours").
 				SetMetaField("metadata").
-				SetTimeField("created_at"))
+				SetTimeField(timeField))
 		err = db.CreateCollection(ctx, colName, opts)
 		if err != nil {
 			return errors.Wrap(err, "Error creating collection")

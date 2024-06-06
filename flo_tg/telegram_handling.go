@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	peeble "github.com/gotd/contrib/pebble"
@@ -113,34 +112,23 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 
 	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
-	source := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
+	source, deepFromId := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 
-	if data, err := json.MarshalIndent(source, "", "    "); err != nil {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
-			"debug_json_encode_error": err.Error(),
-		})
-	} else {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
-			"debug_json_entity": string(data),
-		})
-	}
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
+		"debug_rpc": handling.converter.encodeToJson(source, false),
+	})
 
-	message := handling.converter.makeProtoMessage(msg, source)
+	message := handling.converter.makeProtoMessage(msg, source, deepFromId)
 
-	if data, err := json.MarshalIndent(source, "", "    "); err != nil {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
-			"debug_json_encode_error": err.Error(),
-		})
-	} else {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
-			"debug_json_entity": string(data),
-		})
-	}
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
+		"debug_rpc": handling.converter.encodeToJson(message, false),
+	})
 
 	logInfo["source_uid"] = source.SourceUid
 	logInfo["message_uid"] = message.MessageUid
+	logInfo["deepFromId"] = deepFromId
 
-	sourceRefId, err := handling.bootstrap.Storage.storeSource(ctx, source)
+	sourceRefId, err := handling.bootstrap.Storage.storeSource(ctx, handling.converter, source)
 	logInfo["sourceRefId"] = sourceRefId
 
 	if err != nil {
@@ -151,7 +139,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved", logInfo)
 	}
 
-	messageRefId, err := handling.bootstrap.Storage.StoreMessage(ctx, source, message)
+	messageRefId, err := handling.bootstrap.Storage.StoreMessage(ctx, handling.converter, source, message)
 	logInfo["messageRefId"] = messageRefId
 
 	if err != nil {

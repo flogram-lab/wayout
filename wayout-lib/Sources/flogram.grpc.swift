@@ -17,10 +17,10 @@ public protocol FlotgServiceClientProtocol: GRPCClient {
   var interceptors: FlotgServiceClientInterceptorFactoryProtocol? { get }
 
   func getChats(
-    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    _ request: FlotgGetChatsRequest,
     callOptions: CallOptions?,
     handler: @escaping (FlotgMonitor) -> Void
-  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor>
+  ) -> ServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor>
 
   func setMonitoring(
     _ request: FlotgMonitor,
@@ -28,10 +28,10 @@ public protocol FlotgServiceClientProtocol: GRPCClient {
   ) -> UnaryCall<FlotgMonitor, FlotgMonitor>
 
   func getMessages(
-    _ request: FlotgMessagesRequest,
+    _ request: FlotgGetMessagesRequest,
     callOptions: CallOptions?,
     handler: @escaping (FLO_MESSAGE) -> Void
-  ) -> ServerStreamingCall<FlotgMessagesRequest, FLO_MESSAGE>
+  ) -> ServerStreamingCall<FlotgGetMessagesRequest, FLO_MESSAGE>
 }
 
 extension FlotgServiceClientProtocol {
@@ -47,10 +47,10 @@ extension FlotgServiceClientProtocol {
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func getChats(
-    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    _ request: FlotgGetChatsRequest,
     callOptions: CallOptions? = nil,
     handler: @escaping (FlotgMonitor) -> Void
-  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor> {
+  ) -> ServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor> {
     return self.makeServerStreamingCall(
       path: FlotgServiceClientMetadata.Methods.getChats.path,
       request: request,
@@ -86,10 +86,10 @@ extension FlotgServiceClientProtocol {
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func getMessages(
-    _ request: FlotgMessagesRequest,
+    _ request: FlotgGetMessagesRequest,
     callOptions: CallOptions? = nil,
     handler: @escaping (FLO_MESSAGE) -> Void
-  ) -> ServerStreamingCall<FlotgMessagesRequest, FLO_MESSAGE> {
+  ) -> ServerStreamingCall<FlotgGetMessagesRequest, FLO_MESSAGE> {
     return self.makeServerStreamingCall(
       path: FlotgServiceClientMetadata.Methods.getMessages.path,
       request: request,
@@ -163,9 +163,9 @@ public protocol FlotgServiceAsyncClientProtocol: GRPCClient {
   var interceptors: FlotgServiceClientInterceptorFactoryProtocol? { get }
 
   func makeGetChatsCall(
-    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    _ request: FlotgGetChatsRequest,
     callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor>
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor>
 
   func makeSetMonitoringCall(
     _ request: FlotgMonitor,
@@ -173,9 +173,9 @@ public protocol FlotgServiceAsyncClientProtocol: GRPCClient {
   ) -> GRPCAsyncUnaryCall<FlotgMonitor, FlotgMonitor>
 
   func makeGetMessagesCall(
-    _ request: FlotgMessagesRequest,
+    _ request: FlotgGetMessagesRequest,
     callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<FlotgMessagesRequest, FLO_MESSAGE>
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetMessagesRequest, FLO_MESSAGE>
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -189,9 +189,9 @@ extension FlotgServiceAsyncClientProtocol {
   }
 
   public func makeGetChatsCall(
-    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    _ request: FlotgGetChatsRequest,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor> {
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor> {
     return self.makeAsyncServerStreamingCall(
       path: FlotgServiceClientMetadata.Methods.getChats.path,
       request: request,
@@ -213,9 +213,9 @@ extension FlotgServiceAsyncClientProtocol {
   }
 
   public func makeGetMessagesCall(
-    _ request: FlotgMessagesRequest,
+    _ request: FlotgGetMessagesRequest,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<FlotgMessagesRequest, FLO_MESSAGE> {
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetMessagesRequest, FLO_MESSAGE> {
     return self.makeAsyncServerStreamingCall(
       path: FlotgServiceClientMetadata.Methods.getMessages.path,
       request: request,
@@ -228,7 +228,7 @@ extension FlotgServiceAsyncClientProtocol {
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension FlotgServiceAsyncClientProtocol {
   public func getChats(
-    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    _ request: FlotgGetChatsRequest,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncResponseStream<FlotgMonitor> {
     return self.performAsyncServerStreamingCall(
@@ -252,7 +252,7 @@ extension FlotgServiceAsyncClientProtocol {
   }
 
   public func getMessages(
-    _ request: FlotgMessagesRequest,
+    _ request: FlotgGetMessagesRequest,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncResponseStream<FLO_MESSAGE> {
     return self.performAsyncServerStreamingCall(
@@ -284,13 +284,13 @@ public struct FlotgServiceAsyncClient: FlotgServiceAsyncClientProtocol {
 public protocol FlotgServiceClientInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when invoking 'getChats'.
-  func makeGetChatsInterceptors() -> [ClientInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor>]
+  func makeGetChatsInterceptors() -> [ClientInterceptor<FlotgGetChatsRequest, FlotgMonitor>]
 
   /// - Returns: Interceptors to use when invoking 'setMonitoring'.
   func makeSetMonitoringInterceptors() -> [ClientInterceptor<FlotgMonitor, FlotgMonitor>]
 
   /// - Returns: Interceptors to use when invoking 'getMessages'.
-  func makeGetMessagesInterceptors() -> [ClientInterceptor<FlotgMessagesRequest, FLO_MESSAGE>]
+  func makeGetMessagesInterceptors() -> [ClientInterceptor<FlotgGetMessagesRequest, FLO_MESSAGE>]
 }
 
 public enum FlotgServiceClientMetadata {
@@ -333,24 +333,24 @@ public protocol FloRssServiceClientProtocol: GRPCClient {
   func getFeeds(
     _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions?,
-    handler: @escaping (FloSyndicationFeed) -> Void
-  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed>
+    handler: @escaping (FloRssFeed) -> Void
+  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed>
 
   func createFeed(
-    _ request: FloRssCreate,
+    _ request: FloRssCreateRequest,
     callOptions: CallOptions?
-  ) -> UnaryCall<FloRssCreate, FloSyndicationFeed>
+  ) -> UnaryCall<FloRssCreateRequest, FloRssFeed>
 
   func deleteFeed(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions?
-  ) -> UnaryCall<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty>
+  ) -> UnaryCall<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty>
 
   func getMessages(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions?,
     handler: @escaping (FLO_MESSAGE) -> Void
-  ) -> ServerStreamingCall<FloSyndicationFeed, FLO_MESSAGE>
+  ) -> ServerStreamingCall<FloRssFeed, FLO_MESSAGE>
 }
 
 extension FloRssServiceClientProtocol {
@@ -368,8 +368,8 @@ extension FloRssServiceClientProtocol {
   public func getFeeds(
     _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions? = nil,
-    handler: @escaping (FloSyndicationFeed) -> Void
-  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed> {
+    handler: @escaping (FloRssFeed) -> Void
+  ) -> ServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed> {
     return self.makeServerStreamingCall(
       path: FloRssServiceClientMetadata.Methods.getFeeds.path,
       request: request,
@@ -386,9 +386,9 @@ extension FloRssServiceClientProtocol {
   ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func createFeed(
-    _ request: FloRssCreate,
+    _ request: FloRssCreateRequest,
     callOptions: CallOptions? = nil
-  ) -> UnaryCall<FloRssCreate, FloSyndicationFeed> {
+  ) -> UnaryCall<FloRssCreateRequest, FloRssFeed> {
     return self.makeUnaryCall(
       path: FloRssServiceClientMetadata.Methods.createFeed.path,
       request: request,
@@ -404,9 +404,9 @@ extension FloRssServiceClientProtocol {
   ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func deleteFeed(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil
-  ) -> UnaryCall<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty> {
+  ) -> UnaryCall<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty> {
     return self.makeUnaryCall(
       path: FloRssServiceClientMetadata.Methods.deleteFeed.path,
       request: request,
@@ -423,10 +423,10 @@ extension FloRssServiceClientProtocol {
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func getMessages(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil,
     handler: @escaping (FLO_MESSAGE) -> Void
-  ) -> ServerStreamingCall<FloSyndicationFeed, FLO_MESSAGE> {
+  ) -> ServerStreamingCall<FloRssFeed, FLO_MESSAGE> {
     return self.makeServerStreamingCall(
       path: FloRssServiceClientMetadata.Methods.getMessages.path,
       request: request,
@@ -502,22 +502,22 @@ public protocol FloRssServiceAsyncClientProtocol: GRPCClient {
   func makeGetFeedsCall(
     _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed>
+  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed>
 
   func makeCreateFeedCall(
-    _ request: FloRssCreate,
+    _ request: FloRssCreateRequest,
     callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<FloRssCreate, FloSyndicationFeed>
+  ) -> GRPCAsyncUnaryCall<FloRssCreateRequest, FloRssFeed>
 
   func makeDeleteFeedCall(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty>
+  ) -> GRPCAsyncUnaryCall<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty>
 
   func makeGetMessagesCall(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<FloSyndicationFeed, FLO_MESSAGE>
+  ) -> GRPCAsyncServerStreamingCall<FloRssFeed, FLO_MESSAGE>
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -533,7 +533,7 @@ extension FloRssServiceAsyncClientProtocol {
   public func makeGetFeedsCall(
     _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed> {
+  ) -> GRPCAsyncServerStreamingCall<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed> {
     return self.makeAsyncServerStreamingCall(
       path: FloRssServiceClientMetadata.Methods.getFeeds.path,
       request: request,
@@ -543,9 +543,9 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func makeCreateFeedCall(
-    _ request: FloRssCreate,
+    _ request: FloRssCreateRequest,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<FloRssCreate, FloSyndicationFeed> {
+  ) -> GRPCAsyncUnaryCall<FloRssCreateRequest, FloRssFeed> {
     return self.makeAsyncUnaryCall(
       path: FloRssServiceClientMetadata.Methods.createFeed.path,
       request: request,
@@ -555,9 +555,9 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func makeDeleteFeedCall(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty> {
+  ) -> GRPCAsyncUnaryCall<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty> {
     return self.makeAsyncUnaryCall(
       path: FloRssServiceClientMetadata.Methods.deleteFeed.path,
       request: request,
@@ -567,9 +567,9 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func makeGetMessagesCall(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<FloSyndicationFeed, FLO_MESSAGE> {
+  ) -> GRPCAsyncServerStreamingCall<FloRssFeed, FLO_MESSAGE> {
     return self.makeAsyncServerStreamingCall(
       path: FloRssServiceClientMetadata.Methods.getMessages.path,
       request: request,
@@ -584,7 +584,7 @@ extension FloRssServiceAsyncClientProtocol {
   public func getFeeds(
     _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncResponseStream<FloSyndicationFeed> {
+  ) -> GRPCAsyncResponseStream<FloRssFeed> {
     return self.performAsyncServerStreamingCall(
       path: FloRssServiceClientMetadata.Methods.getFeeds.path,
       request: request,
@@ -594,9 +594,9 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func createFeed(
-    _ request: FloRssCreate,
+    _ request: FloRssCreateRequest,
     callOptions: CallOptions? = nil
-  ) async throws -> FloSyndicationFeed {
+  ) async throws -> FloRssFeed {
     return try await self.performAsyncUnaryCall(
       path: FloRssServiceClientMetadata.Methods.createFeed.path,
       request: request,
@@ -606,7 +606,7 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func deleteFeed(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil
   ) async throws -> SwiftProtobuf.Google_Protobuf_Empty {
     return try await self.performAsyncUnaryCall(
@@ -618,7 +618,7 @@ extension FloRssServiceAsyncClientProtocol {
   }
 
   public func getMessages(
-    _ request: FloSyndicationFeed,
+    _ request: FloRssFeed,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncResponseStream<FLO_MESSAGE> {
     return self.performAsyncServerStreamingCall(
@@ -650,16 +650,16 @@ public struct FloRssServiceAsyncClient: FloRssServiceAsyncClientProtocol {
 public protocol FloRssServiceClientInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when invoking 'getFeeds'.
-  func makeGetFeedsInterceptors() -> [ClientInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed>]
+  func makeGetFeedsInterceptors() -> [ClientInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed>]
 
   /// - Returns: Interceptors to use when invoking 'createFeed'.
-  func makeCreateFeedInterceptors() -> [ClientInterceptor<FloRssCreate, FloSyndicationFeed>]
+  func makeCreateFeedInterceptors() -> [ClientInterceptor<FloRssCreateRequest, FloRssFeed>]
 
   /// - Returns: Interceptors to use when invoking 'deleteFeed'.
-  func makeDeleteFeedInterceptors() -> [ClientInterceptor<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty>]
+  func makeDeleteFeedInterceptors() -> [ClientInterceptor<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty>]
 
   /// - Returns: Interceptors to use when invoking 'getMessages'.
-  func makeGetMessagesInterceptors() -> [ClientInterceptor<FloSyndicationFeed, FLO_MESSAGE>]
+  func makeGetMessagesInterceptors() -> [ClientInterceptor<FloRssFeed, FLO_MESSAGE>]
 }
 
 public enum FloRssServiceClientMetadata {
@@ -705,11 +705,11 @@ public enum FloRssServiceClientMetadata {
 public protocol FlotgServiceProvider: CallHandlerProvider {
   var interceptors: FlotgServiceServerInterceptorFactoryProtocol? { get }
 
-  func getChats(request: SwiftProtobuf.Google_Protobuf_Empty, context: StreamingResponseCallContext<FlotgMonitor>) -> EventLoopFuture<GRPCStatus>
+  func getChats(request: FlotgGetChatsRequest, context: StreamingResponseCallContext<FlotgMonitor>) -> EventLoopFuture<GRPCStatus>
 
   func setMonitoring(request: FlotgMonitor, context: StatusOnlyCallContext) -> EventLoopFuture<FlotgMonitor>
 
-  func getMessages(request: FlotgMessagesRequest, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
+  func getMessages(request: FlotgGetMessagesRequest, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
 }
 
 extension FlotgServiceProvider {
@@ -727,7 +727,7 @@ extension FlotgServiceProvider {
     case "GetChats":
       return ServerStreamingServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        requestDeserializer: ProtobufDeserializer<FlotgGetChatsRequest>(),
         responseSerializer: ProtobufSerializer<FlotgMonitor>(),
         interceptors: self.interceptors?.makeGetChatsInterceptors() ?? [],
         userFunction: self.getChats(request:context:)
@@ -745,7 +745,7 @@ extension FlotgServiceProvider {
     case "GetMessages":
       return ServerStreamingServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgMessagesRequest>(),
+        requestDeserializer: ProtobufDeserializer<FlotgGetMessagesRequest>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
         interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
         userFunction: self.getMessages(request:context:)
@@ -764,7 +764,7 @@ public protocol FlotgServiceAsyncProvider: CallHandlerProvider, Sendable {
   var interceptors: FlotgServiceServerInterceptorFactoryProtocol? { get }
 
   func getChats(
-    request: SwiftProtobuf.Google_Protobuf_Empty,
+    request: FlotgGetChatsRequest,
     responseStream: GRPCAsyncResponseStreamWriter<FlotgMonitor>,
     context: GRPCAsyncServerCallContext
   ) async throws
@@ -775,7 +775,7 @@ public protocol FlotgServiceAsyncProvider: CallHandlerProvider, Sendable {
   ) async throws -> FlotgMonitor
 
   func getMessages(
-    request: FlotgMessagesRequest,
+    request: FlotgGetMessagesRequest,
     responseStream: GRPCAsyncResponseStreamWriter<FLO_MESSAGE>,
     context: GRPCAsyncServerCallContext
   ) async throws
@@ -803,7 +803,7 @@ extension FlotgServiceAsyncProvider {
     case "GetChats":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        requestDeserializer: ProtobufDeserializer<FlotgGetChatsRequest>(),
         responseSerializer: ProtobufSerializer<FlotgMonitor>(),
         interceptors: self.interceptors?.makeGetChatsInterceptors() ?? [],
         wrapping: { try await self.getChats(request: $0, responseStream: $1, context: $2) }
@@ -821,7 +821,7 @@ extension FlotgServiceAsyncProvider {
     case "GetMessages":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgMessagesRequest>(),
+        requestDeserializer: ProtobufDeserializer<FlotgGetMessagesRequest>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
         interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
         wrapping: { try await self.getMessages(request: $0, responseStream: $1, context: $2) }
@@ -837,7 +837,7 @@ public protocol FlotgServiceServerInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when handling 'getChats'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetChatsInterceptors() -> [ServerInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FlotgMonitor>]
+  func makeGetChatsInterceptors() -> [ServerInterceptor<FlotgGetChatsRequest, FlotgMonitor>]
 
   /// - Returns: Interceptors to use when handling 'setMonitoring'.
   ///   Defaults to calling `self.makeInterceptors()`.
@@ -845,7 +845,7 @@ public protocol FlotgServiceServerInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when handling 'getMessages'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetMessagesInterceptors() -> [ServerInterceptor<FlotgMessagesRequest, FLO_MESSAGE>]
+  func makeGetMessagesInterceptors() -> [ServerInterceptor<FlotgGetMessagesRequest, FLO_MESSAGE>]
 }
 
 public enum FlotgServiceServerMetadata {
@@ -883,13 +883,13 @@ public enum FlotgServiceServerMetadata {
 public protocol FloRssServiceProvider: CallHandlerProvider {
   var interceptors: FloRssServiceServerInterceptorFactoryProtocol? { get }
 
-  func getFeeds(request: SwiftProtobuf.Google_Protobuf_Empty, context: StreamingResponseCallContext<FloSyndicationFeed>) -> EventLoopFuture<GRPCStatus>
+  func getFeeds(request: SwiftProtobuf.Google_Protobuf_Empty, context: StreamingResponseCallContext<FloRssFeed>) -> EventLoopFuture<GRPCStatus>
 
-  func createFeed(request: FloRssCreate, context: StatusOnlyCallContext) -> EventLoopFuture<FloSyndicationFeed>
+  func createFeed(request: FloRssCreateRequest, context: StatusOnlyCallContext) -> EventLoopFuture<FloRssFeed>
 
-  func deleteFeed(request: FloSyndicationFeed, context: StatusOnlyCallContext) -> EventLoopFuture<SwiftProtobuf.Google_Protobuf_Empty>
+  func deleteFeed(request: FloRssFeed, context: StatusOnlyCallContext) -> EventLoopFuture<SwiftProtobuf.Google_Protobuf_Empty>
 
-  func getMessages(request: FloSyndicationFeed, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
+  func getMessages(request: FloRssFeed, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
 }
 
 extension FloRssServiceProvider {
@@ -908,7 +908,7 @@ extension FloRssServiceProvider {
       return ServerStreamingServerHandler(
         context: context,
         requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
-        responseSerializer: ProtobufSerializer<FloSyndicationFeed>(),
+        responseSerializer: ProtobufSerializer<FloRssFeed>(),
         interceptors: self.interceptors?.makeGetFeedsInterceptors() ?? [],
         userFunction: self.getFeeds(request:context:)
       )
@@ -916,8 +916,8 @@ extension FloRssServiceProvider {
     case "CreateFeed":
       return UnaryServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloRssCreate>(),
-        responseSerializer: ProtobufSerializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssCreateRequest>(),
+        responseSerializer: ProtobufSerializer<FloRssFeed>(),
         interceptors: self.interceptors?.makeCreateFeedInterceptors() ?? [],
         userFunction: self.createFeed(request:context:)
       )
@@ -925,7 +925,7 @@ extension FloRssServiceProvider {
     case "DeleteFeed":
       return UnaryServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssFeed>(),
         responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
         interceptors: self.interceptors?.makeDeleteFeedInterceptors() ?? [],
         userFunction: self.deleteFeed(request:context:)
@@ -934,7 +934,7 @@ extension FloRssServiceProvider {
     case "GetMessages":
       return ServerStreamingServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssFeed>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
         interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
         userFunction: self.getMessages(request:context:)
@@ -954,22 +954,22 @@ public protocol FloRssServiceAsyncProvider: CallHandlerProvider, Sendable {
 
   func getFeeds(
     request: SwiftProtobuf.Google_Protobuf_Empty,
-    responseStream: GRPCAsyncResponseStreamWriter<FloSyndicationFeed>,
+    responseStream: GRPCAsyncResponseStreamWriter<FloRssFeed>,
     context: GRPCAsyncServerCallContext
   ) async throws
 
   func createFeed(
-    request: FloRssCreate,
+    request: FloRssCreateRequest,
     context: GRPCAsyncServerCallContext
-  ) async throws -> FloSyndicationFeed
+  ) async throws -> FloRssFeed
 
   func deleteFeed(
-    request: FloSyndicationFeed,
+    request: FloRssFeed,
     context: GRPCAsyncServerCallContext
   ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
 
   func getMessages(
-    request: FloSyndicationFeed,
+    request: FloRssFeed,
     responseStream: GRPCAsyncResponseStreamWriter<FLO_MESSAGE>,
     context: GRPCAsyncServerCallContext
   ) async throws
@@ -998,7 +998,7 @@ extension FloRssServiceAsyncProvider {
       return GRPCAsyncServerHandler(
         context: context,
         requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
-        responseSerializer: ProtobufSerializer<FloSyndicationFeed>(),
+        responseSerializer: ProtobufSerializer<FloRssFeed>(),
         interceptors: self.interceptors?.makeGetFeedsInterceptors() ?? [],
         wrapping: { try await self.getFeeds(request: $0, responseStream: $1, context: $2) }
       )
@@ -1006,8 +1006,8 @@ extension FloRssServiceAsyncProvider {
     case "CreateFeed":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloRssCreate>(),
-        responseSerializer: ProtobufSerializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssCreateRequest>(),
+        responseSerializer: ProtobufSerializer<FloRssFeed>(),
         interceptors: self.interceptors?.makeCreateFeedInterceptors() ?? [],
         wrapping: { try await self.createFeed(request: $0, context: $1) }
       )
@@ -1015,7 +1015,7 @@ extension FloRssServiceAsyncProvider {
     case "DeleteFeed":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssFeed>(),
         responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
         interceptors: self.interceptors?.makeDeleteFeedInterceptors() ?? [],
         wrapping: { try await self.deleteFeed(request: $0, context: $1) }
@@ -1024,7 +1024,7 @@ extension FloRssServiceAsyncProvider {
     case "GetMessages":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FloSyndicationFeed>(),
+        requestDeserializer: ProtobufDeserializer<FloRssFeed>(),
         responseSerializer: ProtobufSerializer<FLO_MESSAGE>(),
         interceptors: self.interceptors?.makeGetMessagesInterceptors() ?? [],
         wrapping: { try await self.getMessages(request: $0, responseStream: $1, context: $2) }
@@ -1040,19 +1040,19 @@ public protocol FloRssServiceServerInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when handling 'getFeeds'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetFeedsInterceptors() -> [ServerInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FloSyndicationFeed>]
+  func makeGetFeedsInterceptors() -> [ServerInterceptor<SwiftProtobuf.Google_Protobuf_Empty, FloRssFeed>]
 
   /// - Returns: Interceptors to use when handling 'createFeed'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeCreateFeedInterceptors() -> [ServerInterceptor<FloRssCreate, FloSyndicationFeed>]
+  func makeCreateFeedInterceptors() -> [ServerInterceptor<FloRssCreateRequest, FloRssFeed>]
 
   /// - Returns: Interceptors to use when handling 'deleteFeed'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeDeleteFeedInterceptors() -> [ServerInterceptor<FloSyndicationFeed, SwiftProtobuf.Google_Protobuf_Empty>]
+  func makeDeleteFeedInterceptors() -> [ServerInterceptor<FloRssFeed, SwiftProtobuf.Google_Protobuf_Empty>]
 
   /// - Returns: Interceptors to use when handling 'getMessages'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetMessagesInterceptors() -> [ServerInterceptor<FloSyndicationFeed, FLO_MESSAGE>]
+  func makeGetMessagesInterceptors() -> [ServerInterceptor<FloRssFeed, FLO_MESSAGE>]
 }
 
 public enum FloRssServiceServerMetadata {
