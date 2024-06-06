@@ -58,7 +58,7 @@ func (op *storageSave) Source(ctx context.Context, c *converter, source *proto.F
 
 	res, err := col.InsertOne(ctx, &m)
 	if err != nil {
-		op.logger.Message(gelf.LOG_ERR, "storage", "InsertOne failed (Source)", map[string]any{
+		op.logger.Message(gelf.LOG_ERR, "storage_save", "InsertOne failed (Source)", map[string]any{
 			"col_name":   db_collection_sources,
 			"err":        err,
 			"debug_json": c.encodeToJson(m, true),
@@ -100,7 +100,7 @@ func (op *storageSave) Message(ctx context.Context, c *converter, source *proto.
 
 	res, err := col.InsertOne(ctx, &m)
 	if err != nil {
-		op.logger.Message(gelf.LOG_ERR, "storage", "InsertOne failed (Message)", map[string]any{
+		op.logger.Message(gelf.LOG_ERR, "storage_save", "InsertOne failed (Message)", map[string]any{
 			"col_name":   colName,
 			"err":        err,
 			"debug_json": c.encodeToJson(m, true),
@@ -128,7 +128,7 @@ func (op *storageSave) EnsureCollection(ctx context.Context, colName, timeField 
 
 	for _, name := range names {
 		if name == colName {
-			op.logger.Message(gelf.LOG_DEBUG, "storage", "Collection exists already", map[string]any{"col_name": colName})
+			op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Collection exists already", map[string]any{"col_name": colName})
 			return nil
 		}
 	}
@@ -140,7 +140,7 @@ func (op *storageSave) EnsureCollection(ctx context.Context, colName, timeField 
 			SetTimeField(timeField))
 	err = db.CreateCollection(ctx, colName, opts)
 	if err != nil {
-		op.logger.Message(gelf.LOG_NOTICE, "storage", "Failed to created timeseries collection", map[string]any{
+		op.logger.Message(gelf.LOG_NOTICE, "storage_save", "Failed to created timeseries collection", map[string]any{
 			"col_name":       colName,
 			"col_time_field": timeField,
 			"err":            err,
@@ -148,7 +148,7 @@ func (op *storageSave) EnsureCollection(ctx context.Context, colName, timeField 
 		return errors.Wrap(err, "Error creating collection")
 	}
 
-	op.logger.Message(gelf.LOG_NOTICE, "storage", "Collection created as timeseries", map[string]any{
+	op.logger.Message(gelf.LOG_NOTICE, "storage_save", "Collection created as timeseries", map[string]any{
 		"col_name":       colName,
 		"col_time_field": timeField,
 	})

@@ -98,7 +98,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"is_post":     msg.Post,
 	}
 
-	logger := handling.bootstrap.Logging.NewRequest(fmt.Sprintf("tg-message-%s-%d", msg.FromID, msg.ID))
+	logger := handling.bootstrap.Logging.NewRequest(fmt.Sprintf("tg-message-%d-%d", msg.Date, msg.ID))
 
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
@@ -146,7 +146,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	}
 
 	messageRefId, err := save.Message(ctx, handling.converter, source, message)
-	logInfo["messageRefId"] = messageRefId
+	logInfo["message_ref_id"] = messageRefId
 
 	if err != nil {
 		logger.Message(gelf.LOG_ERR, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
