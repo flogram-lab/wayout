@@ -40,6 +40,7 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 			"handler":  handler,
 			"entities": e,
 		}
+		logger := handling.bootstrap.Logging
 
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
@@ -63,6 +64,7 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 			"handler":  handler,
 			"entities": e,
 		}
+		logger := handling.bootstrap.Logging
 
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Channel message received", logInfo)
 
