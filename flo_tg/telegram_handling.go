@@ -128,7 +128,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["message_uid"] = message.MessageUid
 	logInfo["deepFromId"] = deepFromId
 
-	sourceRefId, err := handling.bootstrap.Storage.storeSource(ctx, handling.converter, source)
+	sourceRefId, err := handling.bootstrap.Storage.StoreSource(ctx, handling.converter, source)
 	logInfo["sourceRefId"] = sourceRefId
 
 	if err != nil {

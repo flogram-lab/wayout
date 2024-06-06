@@ -18,7 +18,7 @@ type StorageObjectID string
 
 const (
 	db_collection_sources           = "tgv1-sources"
-	STORAGE_BINARY_RPC_SUBTYPE byte = 255
+	STORAGE_BINARY_RPC_SUBTYPE byte = 255 // 0xff
 )
 
 type Storage struct {
@@ -27,18 +27,18 @@ type Storage struct {
 }
 
 type storedSource struct {
-	ID        primitive.ObjectID `bson:"_id"`
+	ID        string             `bson:"_id"`
 	CreatedAt primitive.DateTime `bson:"created_at"`
 	Source    *proto.FLO_SOURCE  `bson:"source"`
 	SourceRPC primitive.Binary   `bson:"source_rpc"`
 }
 
 type storedMessage struct {
-	ID         primitive.ObjectID `bson:"_id"`
-	CreatedAt  primitive.DateTime `bson:"created_at"`
-	MessageAt  primitive.DateTime `bson:"message_at"`
-	Message    *proto.FLO_MESSAGE `bson:"message"`
-	MessageRPC primitive.Binary   `bson:"message_rpc"`
+	ID               string             `bson:"_id"`
+	CreatedAt        primitive.DateTime `bson:"created_at"`
+	MessageCreatedAt primitive.DateTime `bson:"message_created_at"`
+	Message          *proto.FLO_MESSAGE `bson:"message"`
+	MessageRPC       primitive.Binary   `bson:"message_rpc"`
 }
 
 func NewStorageMongo(uri string, databaseName string) *Storage {
@@ -68,7 +68,7 @@ func (storage *Storage) Close() {
 	}
 }
 
-func (storage *Storage) storeSource(ctx context.Context, c *converter, source *proto.FLO_SOURCE) (StorageObjectID, error) {
+func (storage *Storage) StoreSource(ctx context.Context, c *converter, source *proto.FLO_SOURCE) (StorageObjectID, error) {
 
 	db := storage.mgClient.Database(storage.dbName)
 
@@ -80,7 +80,7 @@ func (storage *Storage) storeSource(ctx context.Context, c *converter, source *p
 	col := db.Collection(db_collection_sources)
 
 	m := storedSource{
-		ID:        primitive.NewObjectID(),
+		ID:        source.SourceUid,
 		CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC()),
 		Source:    source,
 		SourceRPC: primitive.Binary{
@@ -91,15 +91,10 @@ func (storage *Storage) storeSource(ctx context.Context, c *converter, source *p
 
 	res, err := col.InsertOne(ctx, &m)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "InsertOne failed (StoreSource)")
 	}
 
-	id, ok := res.InsertedID.(primitive.ObjectID)
-	if !ok {
-		id, err = primitive.ObjectIDFromHex(res.InsertedID.(string))
-	}
-
-	return StorageObjectID(id.Hex()), err
+	return StorageObjectID(res.InsertedID.(string)), err
 }
 
 func (storage *Storage) StoreMessage(ctx context.Context, c *converter, source *proto.FLO_SOURCE, message *proto.FLO_MESSAGE) (StorageObjectID, error) {
@@ -107,7 +102,7 @@ func (storage *Storage) StoreMessage(ctx context.Context, c *converter, source *
 	db := storage.mgClient.Database(storage.dbName)
 
 	colName := strings.Trim(source.SourceUid, "- ")
-	err := storage.ensureCollection(ctx, colName, "message_at")
+	err := storage.ensureCollection(ctx, colName, "message_created_at")
 	if err != nil {
 		return "", errors.Wrapf(err, "ensureCollection failed for %s", colName)
 	}
@@ -115,10 +110,10 @@ func (storage *Storage) StoreMessage(ctx context.Context, c *converter, source *
 	col := db.Collection(colName)
 
 	m := storedMessage{
-		ID:        primitive.NewObjectID(),
-		CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC()),
-		MessageAt: primitive.NewDateTimeFromTime(message.CreatedAt.AsTime()),
-		Message:   message,
+		ID:               message.MessageUid,
+		CreatedAt:        primitive.NewDateTimeFromTime(time.Now().UTC()),
+		MessageCreatedAt: primitive.NewDateTimeFromTime(message.CreatedAt.AsTime()),
+		Message:          message,
 		MessageRPC: primitive.Binary{
 			Subtype: STORAGE_BINARY_RPC_SUBTYPE,
 			Data:    c.encodeRpcToBytes(message),
@@ -127,15 +122,10 @@ func (storage *Storage) StoreMessage(ctx context.Context, c *converter, source *
 
 	res, err := col.InsertOne(ctx, &m)
 	if err != nil {
-		return "", errors.Wrap(err, "InsertOne failed")
+		return "", errors.Wrap(err, "InsertOne failed (StoreMessage)")
 	}
 
-	id, ok := res.InsertedID.(primitive.ObjectID)
-	if !ok {
-		id, err = primitive.ObjectIDFromHex(res.InsertedID.(string))
-	}
-
-	return StorageObjectID(id.Hex()), err
+	return StorageObjectID(res.InsertedID.(string)), err
 }
 
 func (storage *Storage) ensureCollection(ctx context.Context, colName, timeField string) error {
