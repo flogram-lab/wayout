@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	peeble "github.com/gotd/contrib/pebble"
@@ -97,12 +98,12 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"is_post":     msg.Post,
 	}
 
-	logger := handling.bootstrap.Logging
+	logger := handling.bootstrap.Logging.NewRequest(fmt.Sprintf("tg-message-%s-%d", msg.FromID, msg.ID))
 
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
 
@@ -128,7 +129,12 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["message_uid"] = message.MessageUid
 	logInfo["deepFromId"] = deepFromId
 
-	sourceRefId, err := handling.bootstrap.Storage.StoreSource(ctx, handling.converter, source)
+	save := storageSave{
+		storage: handling.bootstrap.Storage,
+		logger:  logger,
+	}
+
+	sourceRefId, err := save.Source(ctx, handling.converter, source)
 	logInfo["sourceRefId"] = sourceRefId
 
 	if err != nil {
@@ -139,7 +145,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved", logInfo)
 	}
 
-	messageRefId, err := handling.bootstrap.Storage.StoreMessage(ctx, handling.converter, source, message)
+	messageRefId, err := save.Message(ctx, handling.converter, source, message)
 	logInfo["messageRefId"] = messageRefId
 
 	if err != nil {

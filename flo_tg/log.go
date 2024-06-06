@@ -15,6 +15,7 @@ import (
 type Logging interface {
 	Close() error
 	Message(level int32, kind string, message string, extras ...map[string]interface{}) bool
+	NewRequest(requestUid string) Logging
 }
 
 type dummyLogging struct {
@@ -23,8 +24,8 @@ type dummyLogging struct {
 
 type GelfWriterLogging struct {
 	Logging
-	writer             gelf.Writer
-	facility, hostname string
+	writer                         gelf.Writer
+	facility, hostname, requestUid string
 }
 
 func NewLoggingGraylogTCP(facility string) Logging {
@@ -53,9 +54,10 @@ func NewLoggingGraylogTCP(facility string) Logging {
 	log.Printf("logging to stderr & graylog2@'%s'", graylogAddr)
 
 	return &GelfWriterLogging{
-		writer:   gelfWriter,
-		facility: facility,
-		hostname: hostname,
+		writer:     gelfWriter,
+		facility:   facility,
+		hostname:   hostname,
+		requestUid: "",
 	}
 }
 
@@ -73,29 +75,56 @@ func (dummyLogging) Message(level int32, kind string, message string, extras ...
 	return true
 }
 
+func (dummy dummyLogging) NewRequest(string) Logging {
+	return dummy
+}
+
 func (logging *GelfWriterLogging) Close() error {
+	if logging.requestUid != "" {
+		log.Println("WARN not setting request uid for logging since it is already set", logging.requestUid)
+		return nil
+	}
+
 	return logging.writer.Close()
 }
 
-func (self *GelfWriterLogging) Message(level int32, kind string, message string, extras ...map[string]interface{}) bool {
+func (logging *GelfWriterLogging) NewRequest(requestUid string) Logging {
+	if logging.requestUid != "" {
+		return logging
+	}
+
+	return &GelfWriterLogging{
+		writer:     logging.writer,
+		facility:   logging.facility,
+		hostname:   logging.hostname,
+		requestUid: requestUid,
+	}
+}
+
+func (logging *GelfWriterLogging) Message(level int32, kind string, message string, extras ...map[string]interface{}) bool {
 
 	allExtras := map[string]interface{}{}
+
 	for _, ex := range extras {
 		mergo.Merge(&allExtras, ex)
 	}
 
+	if logging.requestUid != "" {
+		allExtras["request_uid"] = logging.requestUid
+	}
+
 	m := &gelf.Message{
 		Version:  "1.1",
-		Host:     self.hostname,
+		Host:     logging.hostname,
 		Short:    kind,
 		Full:     message,
 		TimeUnix: float64(time.Now().UnixNano()) / float64(time.Second),
 		Level:    level,
 		Extra:    allExtras,
-		Facility: self.facility,
+		Facility: logging.facility,
 	}
 
-	err := self.writer.WriteMessage(m)
+	err := logging.writer.WriteMessage(m)
 	if err == nil {
 		return true
 	}
