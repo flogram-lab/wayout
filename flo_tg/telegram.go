@@ -62,8 +62,6 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 	peerDB := pebble.NewPeerStorage(db)
 	lg.Info("Storage", zap.String("path", bootstrap.TgWorkFolder))
 
-	handling := newTelegramHandling(bootstrap, peerDB)
-
 	// Setting up client.
 	//
 	// Dispatcher is used to register handlers for events.
@@ -135,6 +133,8 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 				zap.String("username", self.Username),
 				zap.Int64("id", self.ID),
 			)
+
+			handling := newTelegramHandling(bootstrap, peerDB, self)
 
 			handling.AddHandlers(dispatcher)
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
 	peeble "github.com/gotd/contrib/pebble"
@@ -14,13 +15,15 @@ type telegramHandling struct {
 	bootstrap Bootstrap
 	peerDB    *peeble.PeerStorage
 	converter *converter
+	selfUser  *tg.User
 }
 
-func newTelegramHandling(bootstrap Bootstrap, peerDB *peeble.PeerStorage) *telegramHandling {
+func newTelegramHandling(bootstrap Bootstrap, peerDB *peeble.PeerStorage, selfUser *tg.User) *telegramHandling {
 	return &telegramHandling{
 		bootstrap: bootstrap,
 		peerDB:    peerDB,
 		converter: newConverter(bootstrap),
+		selfUser:  selfUser,
 	}
 }
 
@@ -31,37 +34,60 @@ func (handling *telegramHandling) AddHandlers(dispatcher tg.UpdateDispatcher) {
 
 func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage) error {
-		return handling.genericHandleMessage("new message handler", ctx, e, u)
+		handler := "handlerMessage"
+
+		logInfo := map[string]interface{}{
+			"handler":  handler,
+			"entities": e,
+		}
+
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
+
+		msg, ok := u.Message.(*tg.Message)
+		if !ok {
+
+			logger.Message(gelf.LOG_ERR, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+
+			return nil
+		}
+
+		return handling.genericHandleMessage(handler, ctx, e, msg)
 	}
 }
 
 func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
-		return handling.genericHandleMessage("channel message handler", ctx, e, u)
+		handler := "handlerChannelMessage"
+
+		logInfo := map[string]interface{}{
+			"handler":  handler,
+			"entities": e,
+		}
+
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Channel message received", logInfo)
+
+		msg, ok := u.Message.(*tg.Message)
+		if !ok {
+
+			logger.Message(gelf.LOG_ERR, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+
+			return nil
+		}
+
+		return handling.genericHandleMessage(handler, ctx, e, msg)
 	}
 }
 
-
-func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
+func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message) error {
 
 	logInfo := map[string]interface{}{
 		"handler":  handler,
 		"entities": e,
 	}
 
-	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message received", logInfo)
-
-	msg, ok := u.Message.(*tg.Message)
-	if !ok {
-
-		handling.bootstrap.Logging.Message(gelf.LOG_ERR, "Telegram", "Message lost! Cast type failed (this should not happen, really)", logInfo)
-
-		return nil
-	}
-
 	logInfo = map[string]interface{}{
-		"handler":    handler,
-		"entities": e,
+		"handler":     handler,
+		"entities":    e,
 		"from_id":     msg.FromID,
 		"message":     msg.Message,
 		"peer_id":     msg.PeerID,
@@ -70,10 +96,12 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"is_post":     msg.Post,
 	}
 
+	logger := handling.bootstrap.Logging
+
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
-		handling.bootstrap.Logging.Message(gelf.LOG_CRIT, "Telegram", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
 
@@ -81,23 +109,56 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		return err
 	}
 
-	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message received", logInfo)
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
-	source := handling.converter.makeSource(msg, peer, e)
-	message := handling.converter.makeMessage(msg, source)
+	source := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 
-	logInfo["source_uid"] = source.SourceUID;
-	logInfo["message_uid"] = message.MessageUID;
-
-	err = handling.bootstrap.Storage.saveMessage(source, message)
-
-	if err != nil {
-		handling.bootstrap.Logging.Message(gelf.LOG_ERROR, "Telegram", "Message storage failed", logInfo, map[string]interface{}{
-			"err": err.Error(),
+	if data, err := json.MarshalIndent(source, "", "    "); err != nil {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
+			"debug_json_encode_error": err.Error(),
+		})
+	} else {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoSource", logInfo, map[string]interface{}{
+			"debug_json_entity": string(data),
 		})
 	}
 
-	handling.bootstrap.Logging.Message(gelf.LOG_DEBUG, "Telegram", "Message saved", logInfo)
+	message := handling.converter.makeProtoMessage(msg, source)
+
+	if data, err := json.MarshalIndent(source, "", "    "); err != nil {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
+			"debug_json_encode_error": err.Error(),
+		})
+	} else {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "makeProtoMessage", logInfo, map[string]interface{}{
+			"debug_json_entity": string(data),
+		})
+	}
+
+	logInfo["source_uid"] = source.SourceUid
+	logInfo["message_uid"] = message.MessageUid
+
+	sourceRefId, err := handling.bootstrap.Storage.storeSource(ctx, source)
+	logInfo["sourceRefId"] = sourceRefId
+
+	if err != nil {
+		logger.Message(gelf.LOG_ERR, "telegram_handling", "Source storage failed", logInfo, map[string]interface{}{
+			"err": err.Error(),
+		})
+	} else {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved", logInfo)
+	}
+
+	messageRefId, err := handling.bootstrap.Storage.StoreMessage(ctx, source, message)
+	logInfo["messageRefId"] = messageRefId
+
+	if err != nil {
+		logger.Message(gelf.LOG_ERR, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
+			"err": err.Error(),
+		})
+	} else {
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message saved", logInfo)
+	}
 
 	return err
 }
