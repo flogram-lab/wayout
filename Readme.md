@@ -6,25 +6,6 @@ Read Telegram Messenger content with simple RPC API/RSS.
 
 ![FlogramBlueprint](FlogramBlueprint.drawio.png)
 
-### Requirements
-
-- Docker
-
-Min RAM:
-
- - \> 4 GB (run without build)
- - \> 8 GB (build/development)
-
-Min HDD
-
- - ~ 5 GB (run without build)
- - ~ 15 GB (build/development)
-
- ##### Developing
-
-  - Visual Studio Code
-  - Devcontainers extension
-
 # Installation
 
       $ docker network create --driver bridge flogram-internal
@@ -95,6 +76,11 @@ Basic `docker-compose.yml` only exposes TCP/UDP ports of Graylog and its Datanod
 Containers linked to the `flogram-internal` bridged network can reach each other.
 
 ### Development
+
+##### Requirements
+
+- Visual Studio Code
+- Devcontainers extension
 
 #### Extending
 
