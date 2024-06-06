@@ -19,6 +19,7 @@ VOLUME /source
 RUN mkdir -p /out/swift
 
 ENTRYPOINT [ "/bin/sh", "-c" , "protoc \
+    --experimental_allow_proto3_optional \
     --proto_path=/source \
     --swift_out=/out/swift \
     --grpc-swift_out=/out/swift \

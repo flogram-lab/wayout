@@ -15,28 +15,32 @@ enum FLAGS {
    User = 4;
    Group = 8;
    Channel = 16;
+
+   // ForwardFromSource = 32;
+   // TgUsername = 64;
+   // TgMediaDownloadLinks = 128;
 }
 
 message FLO_SOURCE {
    int32 flags = 1;
 
-   int64 deep_from_id = 2;
-   string source_uid = 3;
-   string title = 4;
+   string source_uid = 2;
+   string title = 3;
 }
 
 message FLO_MESSAGE {
    int32 flags = 1;
 
-   int64 deep_from_id = 2;
-   string source_uid = 3;
-   string title = 4;
+   string source_uid = 2;
+   string title = 3;
 
    string message_uid = 5;
    google.protobuf.Timestamp created_at = 6;
    string text = 7;
    
    repeated string message_links = 8;
+
+   //optional FLO_SOURCE ForwardFromSource = 9;
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -45,44 +49,47 @@ message FLO_MESSAGE {
 service FlotgService {
    rpc GetChats(google.protobuf.Empty) returns (stream FlotgMonitor);
    rpc SetMonitoring(FlotgMonitor) returns (FlotgMonitor);
-   rpc GetMessages(FlotgMessagesRequest) returns (stream FLO_MESSAGE);
+   rpc GetMessages(FlotgGetMessagesRequest) returns (stream FLO_MESSAGE);
 }
 
 message FlotgMonitor {
    int32 flags = 1;
 
-   int64 from_peer_id = 2;
-   string source_uid = 3;
-   bool monitoring_enabled = 4;
+   FLO_SOURCE source = 2;
+
+   bool monitoring_enabled = 3;
+
+   repeated cached_last_message_times = 4;
 }
 
-message FlotgMessagesRequest {
+message FlotgGetMessagesRequest {
    int32 flags = 1;
 
-   repeated string source_uid = 2;
-   google.protobuf.Timestamp messages_since = 3;
+   repeated string source_uids = 2;
+
+   optional google.protobuf.Timestamp messages_since = 3;
+   optional google.protobuf.Timestamp messages_before = 4;
 }
 
 // ------------------------------------------------------------------------------------------------------
 // flo_rss
 
 service FloRssService {
-   rpc GetFeeds(google.protobuf.Empty) returns (stream FloSyndicationFeed);
-   rpc CreateFeed(FloRssCreate) returns (FloSyndicationFeed);
-   rpc DeleteFeed(FloSyndicationFeed) returns (google.protobuf.Empty);
-   rpc GetMessages(FloSyndicationFeed) returns (stream FLO_MESSAGE);
+   rpc GetFeeds(google.protobuf.Empty) returns (stream FloRssFeed);
+   rpc CreateFeed(FloRssCreateRequest) returns (FloRssFeed);
+   rpc DeleteFeed(FloRssFeed) returns (google.protobuf.Empty);
+   rpc GetMessages(FloRssFeed) returns (stream FLO_MESSAGE);
 }
 
-message FloSyndicationFeed {
+message FloRssFeed {
    int32 flags = 1;
 
    string source_uid = 2;
    string title = 3;
-   string from_peer_id = 4;
-   string rss_uri = 5;
+   string rss_uri = 4;
 }
 
-message FloRssCreate {
+message FloRssCreateRequest {
    int32 flags = 1;
 
    string source_uid = 2;

@@ -35,7 +35,7 @@ func (c *converter) makeProtoSource(msg *tg.Message, peer storage.Peer, e tg.Ent
 		}
 
 		if peer.Channel.Username != "" {
-			// TODO: v.Flags |= int32(proto.FLAGS_SourceUsername)
+			// TODO: v.Flags |= int32(proto.FLAGS_TgUsername)
 			// TODO: v.Username = fmt.Sprintf("https://t.me/@%s", peer.Channel.Username)
 		}
 
@@ -51,7 +51,7 @@ func (c *converter) makeProtoSource(msg *tg.Message, peer storage.Peer, e tg.Ent
 		}
 
 		if peer.User.Username != "" {
-			// TODO: v.Flags |= int32(proto.FLAGS_SourceUsername)
+			// TODO: v.Flags |= int32(proto.FLAGS_TgUsername)
 			// TODO: v.Username = fmt.Sprintf("https://t.me/@%s", peer.User.Username)
 		}
 
@@ -83,7 +83,7 @@ func (c *converter) makeProtoMessage(msg *tg.Message, source *proto.FLO_SOURCE) 
 	}
 
 	// TODO: proto add detection for username
-	// if source.Flags&int32(proto.FLAGS_SourceUsername) != 0 {
+	// if source.Flags&int32(proto.FLAGS_TgUsername) != 0 {
 	// 	s := fmt.Sprintf("https://t.me/%s/%d", source.Username, msg.ID)
 	// 	messageDeepLinks = append(messageDeepLinks, s)
 	// }
