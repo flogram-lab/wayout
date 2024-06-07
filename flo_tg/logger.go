@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -13,11 +14,30 @@ import (
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
+var defaultLogger Logger = nil
+
+func LogErrorln(ss ...any) {
+	s := fmt.Sprintln(ss...)
+
+	if defaultLogger == nil {
+		os.Stderr.Write([]byte(s))
+	} else {
+		defaultLogger.Write([]byte(s))
+	}
+}
+
+func LogErrorf(errf string, arg ...any) {
+	s := fmt.Sprintf(errf, arg...) + "\n"
+	LogErrorln(s)
+}
+
 type Logger interface {
 	io.Writer
 	Close() error
 	Message(level int32, kind string, message string, extras ...map[string]interface{}) bool
 	AddRequestID(requestUid string) Logger
+	CopyToStderr() Logger
+	SetAsDefault() Logger
 }
 
 type dummyLogging struct {
@@ -28,21 +48,10 @@ type gelfLogger struct {
 	Logger
 	writer                         gelf.Writer
 	facility, hostname, requestUid string
+	stderr                         bool
 }
 
-func newLoggerGraylogTCP(facility string) Logger {
-	graylogAddr := os.Getenv("GRAYLOG_ADDRESS")
-	if graylogAddr == "" {
-		log.Println("WARN not using Graylog, empty", "GRAYLOG_ADDRESS")
-		return dummyLogging{}
-	}
-
-	log.Println("GraylogGELF TCP address:", graylogAddr)
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
-	}
+func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
 
 	gelfWriter, err := gelf.NewTCPWriter(graylogAddr)
 	if err != nil {
@@ -54,13 +63,11 @@ func newLoggerGraylogTCP(facility string) Logger {
 	logger := &gelfLogger{
 		writer:     gelfWriter,
 		facility:   facility,
-		hostname:   hostname,
+		hostname:   selfHostname,
 		requestUid: "",
 	}
 
-	// log to both stderr and graylog2
-	log.SetOutput(io.MultiWriter(os.Stdout, logger))
-	log.Printf("logging to stdout & graylog @%s", graylogAddr)
+	log.Printf("Logging to stdout & graylog @%s", graylogAddr)
 
 	return logger
 }
@@ -87,12 +94,12 @@ func (dummy dummyLogging) Write(p []byte) (int, error) {
 	return 0, nil
 }
 
-func (logger *gelfLogger) Write(p []byte) (int, error) {
-	if logger.Message(gelf.LOG_INFO, "stdout", strings.Trim(string(p), "\n ")) {
-		return len(p), nil
-	} else {
-		return 0, errors.New("logger.Message() returned false")
-	}
+func (dummy dummyLogging) SetAsDefault() Logger {
+	return dummy
+}
+
+func (dummy dummyLogging) CopyToStderr() Logger {
+	return dummy
 }
 
 func (logger *gelfLogger) Close() error {
@@ -125,8 +132,16 @@ func (logger *gelfLogger) Message(level int32, kind string, message string, extr
 		mergo.Merge(&allExtras, ex)
 	}
 
+	stdErrMessage := fmt.Sprintf("%s: %s", kind, message)
+
 	if logger.requestUid != "" {
 		allExtras["request_uid"] = logger.requestUid
+
+		stdErrMessage = fmt.Sprintf("[%s] %s", logger.requestUid, stdErrMessage)
+	}
+
+	if logger.stderr {
+		os.Stderr.WriteString(stdErrMessage)
 	}
 
 	m := &gelf.Message{
@@ -153,4 +168,22 @@ func (logger *gelfLogger) Message(level int32, kind string, message string, extr
 	}
 
 	return false
+}
+
+func (logger *gelfLogger) Write(p []byte) (int, error) {
+	if logger.Message(gelf.LOG_INFO, "stdout", strings.Trim(string(p), "\n ")) {
+		return len(p), nil
+	} else {
+		return 0, errors.New("logger.Message() returned false")
+	}
+}
+
+func (l *gelfLogger) SetAsDefault() Logger {
+	defaultLogger = l
+	return l
+}
+
+func (l *gelfLogger) CopyToStderr() Logger {
+	l.stderr = true
+	return l
 }

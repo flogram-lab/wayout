@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 	"time"
 
@@ -86,7 +85,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 	waiter := floodwait.NewWaiter().WithCallback(func(ctx context.Context, wait floodwait.FloodWait) {
 		// Notifying about flood wait.
 		lg.Warn("Flood wait", zap.Duration("wait", wait.Duration))
-		log.Println("Got FLOOD_WAIT. Will retry after", wait.Duration)
+		LogErrorln("Got FLOOD_WAIT. Will retry after", wait.Duration)
 	})
 
 	// Filling client options.
@@ -125,7 +124,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			if self.Username != "" {
 				name = fmt.Sprintf("%s (@%s)", name, self.Username)
 			}
-			log.Printf("Current user: %s [ID %d]\n", name, self.ID)
+			LogErrorf("Current user: %s [ID %d]\n", name, self.ID)
 
 			lg.Info("Login",
 				zap.String("first_name", self.FirstName),
@@ -139,11 +138,11 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			handling.AddHandlers(dispatcher)
 
 			// Waiting until context is done.
-			log.Println("Listening for updates. Interrupt (Ctrl+C) to stop.")
+			LogErrorln("Listening for updates. Interrupt (Ctrl+C) to stop.")
 			return updatesRecovery.Run(ctx, api, self.ID, updates.AuthOptions{
 				IsBot: self.Bot,
 				OnStart: func(ctx context.Context) {
-					log.Println("Update recovery initialized and started, listening for events")
+					LogErrorln("Update recovery initialized and started, listening for events")
 				},
 			})
 		}); err != nil {

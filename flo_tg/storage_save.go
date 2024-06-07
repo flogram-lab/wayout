@@ -68,7 +68,7 @@ func (op *storageSave) Source(ctx context.Context, c *converter, source *proto.F
 			"err":      err,
 			"id":       m.ID,
 		})
-		return StorageObjectID(m.ID), err
+		return StorageObjectID(m.ID), nil
 	} else if err != nil {
 		op.logger.Message(gelf.LOG_ALERT, "storage_save", "InsertOne failed (Sources index)", map[string]any{
 			"col_name":   db_collection_sources,
@@ -121,7 +121,7 @@ func (op *storageSave) Message(ctx context.Context, c *converter, source *proto.
 			"err":      err,
 			"id":       m.ID,
 		})
-		return StorageObjectID(m.ID), err
+		return StorageObjectID(m.ID), nil
 	} else if err != nil {
 		op.logger.Message(gelf.LOG_ALERT, "storage_save", "InsertOne failed (Messages index)", map[string]any{
 			"col_name":   colName,

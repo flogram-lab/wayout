@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"reflect"
 
+	"github.com/go-faster/errors"
 	peeble "github.com/gotd/contrib/pebble"
 	"github.com/gotd/contrib/storage"
 	"github.com/gotd/td/tg"
@@ -42,17 +43,22 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 		}
 		logger := handling.bootstrap.Logger
 
+		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
-		msg, ok := u.Message.(*tg.Message)
-		if !ok {
+		switch msg := u.Message.(type) {
 
-			logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+		case *tg.Message:
+			return handling.genericHandleMessage(handler, ctx, e, msg)
 
+		case *tg.MessageService: // TODO
+			// TODO Action : tg.MessageActionGroupCall
 			return nil
-		}
 
-		return handling.genericHandleMessage(handler, ctx, e, msg)
+		default:
+			logger.Message(gelf.LOG_WARNING, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+			return errors.New("message class type not implemented")
+		}
 	}
 }
 
@@ -66,17 +72,22 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 		}
 		logger := handling.bootstrap.Logger
 
+		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Channel message received", logInfo)
 
-		msg, ok := u.Message.(*tg.Message)
-		if !ok {
+		switch msg := u.Message.(type) {
 
-			logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+		case *tg.Message:
+			return handling.genericHandleMessage(handler, ctx, e, msg)
 
+		case *tg.MessageService: // TODO
+			// TODO Action : tg.MessageActionGroupCall
 			return nil
-		}
 
-		return handling.genericHandleMessage(handler, ctx, e, msg)
+		default:
+			logger.Message(gelf.LOG_WARNING, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
+			return errors.New("message class type not implemented")
+		}
 	}
 }
 
@@ -107,7 +118,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 			"err": err.Error(),
 		})
 
-		log.Println("Chat peer not found in database", msg.GetPeerID())
+		LogErrorln("Chat peer not found in database", msg.GetPeerID())
 		return err
 	}
 

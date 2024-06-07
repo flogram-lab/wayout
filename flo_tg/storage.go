@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,6 +43,6 @@ func (storage *Storage) Ping() error {
 
 func (storage *Storage) Close() {
 	if err := storage.mgClient.Disconnect(context.TODO()); err != nil {
-		log.Println("ERROR Close() mmongoogno connection", err)
+		LogErrorln("ERROR Close() mmongoogno connection", err)
 	}
 }

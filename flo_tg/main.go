@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 
@@ -25,7 +24,7 @@ func main() {
 		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "service.bind() failed, RPC service cannot be started", map[string]any{
 			"err": err,
 		})
-		log.Println("ERR: gRPC server failed to start")
+		LogErrorln("ERR: gRPC server failed to start")
 		os.Exit(1)
 	}
 
@@ -33,7 +32,7 @@ func main() {
 
 	if err := CreateAndRunTelegramClient(ctx, bootstrap); err != nil {
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
-			log.Println("\rContext cancelled. Done")
+			LogErrorln("\rContext cancelled. Done")
 			os.Exit(0)
 		}
 
@@ -46,7 +45,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Println("main() Done")
+	LogErrorln("main() Done")
 	os.Exit(0)
 }
 

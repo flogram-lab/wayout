@@ -31,7 +31,17 @@ func (b *Bootstrap) Close() error {
 func BootstrapFromEnvironment() Bootstrap {
 	servicePort := GetenvInt("FLOTG_PORT", 0, false)
 
-	logging := newLoggerGraylogTCP(Graylog_Facility)
+	var logging Logger = &dummyLogging{}
+
+	graylogAddr := GetenvStr("GRAYLOG_ADDRESS", "", false)
+	LogErrorln("GraylogGELF TCP address:", graylogAddr)
+
+	selfHostname, err := os.Hostname()
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
+	}
+
+	logging = NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault()
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
@@ -57,7 +67,7 @@ func BootstrapFromEnvironment() Bootstrap {
 
 	logFilePath := filepath.Join(sessionDir, "log.jsonl")
 
-	log.Printf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath)
+	LogErrorf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath)
 
 	return Bootstrap{
 		Logger:        logging,
