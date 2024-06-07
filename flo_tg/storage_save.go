@@ -10,6 +10,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
@@ -31,7 +32,7 @@ type storedMessage struct {
 
 type storageSave struct {
 	storage *Storage
-	logger  Logging
+	logger  Logger
 }
 
 func (op *storageSave) Source(ctx context.Context, c *converter, source *proto.FLO_SOURCE) (StorageObjectID, error) {
@@ -61,7 +62,14 @@ func (op *storageSave) Source(ctx context.Context, c *converter, source *proto.F
 	}
 
 	res, err := col.InsertOne(ctx, &m)
-	if err != nil {
+	if mongo.IsDuplicateKeyError(err) {
+		op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Duplicate key error is OK (Sources index)", map[string]any{
+			"col_name": db_collection_sources,
+			"err":      err,
+			"id":       m.ID,
+		})
+		return StorageObjectID(m.ID), err
+	} else if err != nil {
 		op.logger.Message(gelf.LOG_ALERT, "storage_save", "InsertOne failed (Sources index)", map[string]any{
 			"col_name":   db_collection_sources,
 			"err":        err,
@@ -107,13 +115,20 @@ func (op *storageSave) Message(ctx context.Context, c *converter, source *proto.
 	}
 
 	res, err := col.InsertOne(ctx, &m)
-	if err != nil {
+	if mongo.IsDuplicateKeyError(err) {
+		op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Duplicate key error is OK (Messages index)", map[string]any{
+			"col_name": colName,
+			"err":      err,
+			"id":       m.ID,
+		})
+		return StorageObjectID(m.ID), err
+	} else if err != nil {
 		op.logger.Message(gelf.LOG_ALERT, "storage_save", "InsertOne failed (Messages index)", map[string]any{
 			"col_name":   colName,
 			"err":        err,
 			"debug_json": c.encodeToJson(m, true),
 		})
-		return "", errors.Wrap(err, "InsertOne failed (Message)")
+		return "", errors.Wrap(err, "InsertOne failed (Source)")
 	}
 
 	op.logger.Message(gelf.LOG_INFO, "storage_save", fmt.Sprintf("InsertOne OK for Message %s", res.InsertedID), map[string]any{
@@ -140,7 +155,7 @@ func (op *storageSave) MakeTimeSeries(ctx context.Context, colName, timeField st
 
 	for _, name := range names {
 		if name == colName {
-			op.logger.Message(gelf.LOG_INFO, "storage_save", "Collection exists already", map[string]any{"col_name": colName})
+			op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Collection exists already", map[string]any{"col_name": colName})
 			return nil
 		}
 	}
@@ -184,7 +199,7 @@ func (op *storageSave) MakeCollection(ctx context.Context, colName string) error
 
 	for _, name := range names {
 		if name == colName {
-			op.logger.Message(gelf.LOG_INFO, "storage_save", "Collection exists already", map[string]any{"col_name": colName})
+			op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Collection exists already", map[string]any{"col_name": colName})
 			return nil
 		}
 	}

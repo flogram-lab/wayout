@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/go-faster/errors"
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
 func main() {
@@ -15,17 +16,34 @@ func main() {
 	defer cancel()
 
 	bootstrap := BootstrapFromEnvironment()
+	defer bootstrap.Close()
 
-	svc := &service{bootstrap: bootstrap}
-	go svc.run()
+	service := &rpcService{bootstrap: bootstrap}
+
+	err := service.bind()
+	if err != nil {
+		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "service.bind() failed, RPC service cannot be started", map[string]any{
+			"err": err,
+		})
+		log.Println("ERR: gRPC server failed to start")
+		os.Exit(1)
+	}
+
+	go service.run()
 
 	if err := CreateAndRunTelegramClient(ctx, bootstrap); err != nil {
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
 			log.Println("\rContext cancelled. Done")
 			os.Exit(0)
 		}
-		_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-		os.Exit(1)
+
+		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "CreateAndRunTelegramClient() returned an error. "+
+			"Exiting with zero for telegram account safety", map[string]any{
+			"err": err,
+		})
+
+		_, _ = fmt.Fprintf(os.Stderr, "CreateAndRunTelegramClient: %+v\n", err)
+		os.Exit(0)
 	}
 
 	log.Println("main() Done")

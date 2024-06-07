@@ -27,6 +27,7 @@ services:
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
   datanode:
+    hostname: datanode
     profiles:
       - bedrock
     image: "${DATANODE_IMAGE:-graylog/graylog-datanode:5.2}"
@@ -56,6 +57,7 @@ services:
       - default
 
   graylog:
+    hostname: graylog
     profiles:
       - bedrock
     image: "${GRAYLOG_IMAGE:-graylog/graylog:5.2}"

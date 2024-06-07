@@ -119,7 +119,7 @@ func (c *converter) encodeToJson(m any, pretty bool) string {
 			"prettty":    pretty,
 			"debug_type": reflect.TypeOf(m),
 		}
-		c.bootstrap.Logging.Message(gelf.LOG_ERR, "converter", "encodeToJson failed to marshal object as JSON string", logInfo)
+		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeToJson failed to marshal object as JSON string", logInfo)
 
 		return ""
 	}
@@ -135,7 +135,7 @@ func (c *converter) encodeRpcToBytes(m protobuf.Message) []byte {
 			"err":       err.Error(),
 			"debug_rpc": c.encodeToJson(m, true),
 		}
-		c.bootstrap.Logging.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", logInfo)
+		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", logInfo)
 
 		return nil
 	}

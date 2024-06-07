@@ -40,7 +40,7 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 			"handler":  handler,
 			"entities": e,
 		}
-		logger := handling.bootstrap.Logging
+		logger := handling.bootstrap.Logger
 
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
@@ -64,7 +64,7 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 			"handler":  handler,
 			"entities": e,
 		}
-		logger := handling.bootstrap.Logging
+		logger := handling.bootstrap.Logger
 
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Channel message received", logInfo)
 
@@ -98,7 +98,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"is_post":     msg.Post,
 	}
 
-	logger := handling.bootstrap.Logging.NewRequest(fmt.Sprintf("tg-message-%d-%d", msg.Date, msg.ID))
+	logger := handling.bootstrap.Logger.AddRequestID(fmt.Sprintf("tg-message-%d-%d", msg.Date, msg.ID))
 
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {

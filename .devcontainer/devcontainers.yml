@@ -2,10 +2,6 @@
 # Extension to main docker-compose.yml
 
 volumes:
-  vscodesvr-lib:
-  vscodesvr-cli:
-  vscodesvr-rss:
-  vscodesvr-tg:
   gopkg:
   gocache:
 
@@ -17,7 +13,6 @@ services:
       dockerfile: devcontainer.swift.Dockerfile
     volumes:
       - ./wayout-lib:/root/wayout-lib
-      - vscodesvr-lib:/root/.vscode-server
     networks:
       - flogram-internal
 
@@ -30,7 +25,6 @@ services:
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
-      - vscodesvr-rss:/root/.vscode-server
     networks:
       - flogram-internal
 
@@ -52,8 +46,9 @@ services:
     volumes:
       - telegram-session:/var/run/telegram-session
       - ./flo_tg:/root/flo_tg
-      - vscodesvr-tg:/root/.vscode-server
       - gopkg:/go/pkg
       - gocache:/go/cache
     networks:
       - flogram-internal
+    ports:
+      - 8920:8920

@@ -15,7 +15,7 @@ const (
 
 type Bootstrap struct {
 	Storage       *Storage
-	Logging       Logging
+	Logger        Logger
 	TgPhone       string
 	TgAppId       int
 	TgAppHash     string
@@ -24,11 +24,14 @@ type Bootstrap struct {
 	ServicePort   int
 }
 
+func (b *Bootstrap) Close() error {
+	return b.Logger.Close()
+}
+
 func BootstrapFromEnvironment() Bootstrap {
 	servicePort := GetenvInt("FLOTG_PORT", 0, false)
 
-	logging := NewLoggingGraylogTCP(Graylog_Facility)
-	defer logging.Close()
+	logging := newLoggerGraylogTCP(Graylog_Facility)
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
@@ -57,7 +60,7 @@ func BootstrapFromEnvironment() Bootstrap {
 	log.Printf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath)
 
 	return Bootstrap{
-		Logging:       logging,
+		Logger:        logging,
 		Storage:       db,
 		TgPhone:       phone,
 		TgAppId:       appID,
