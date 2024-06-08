@@ -116,7 +116,7 @@ func (op *storageSave) Message(ctx context.Context, c *converter, source *proto.
 
 	res, err := col.InsertOne(ctx, &m)
 	if mongo.IsDuplicateKeyError(err) {
-		op.logger.Message(gelf.LOG_DEBUG, "storage_save", "Duplicate key error is OK (Messages index)", map[string]any{
+		op.logger.Message(gelf.LOG_WARNING, "storage_save", "Duplicate key error -- skipped (Messages index)", map[string]any{
 			"col_name": colName,
 			"err":      err,
 			"id":       m.ID,

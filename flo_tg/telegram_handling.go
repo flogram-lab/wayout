@@ -109,7 +109,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"is_post":     msg.Post,
 	}
 
-	logger := handling.bootstrap.Logger.AddRequestID(fmt.Sprintf("tg-message-%d-%d", msg.Date, msg.ID))
+	logger := handling.bootstrap.Logger.AddRequestID(fmt.Sprintf("td-client-%d-%s", msg.ID, RandStringBytesMaskImprSrcSB(8)))
 
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
