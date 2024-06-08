@@ -28,7 +28,7 @@ func newTelegramHandling(bootstrap Bootstrap, peerDB *peeble.PeerStorage, selfUs
 	}
 }
 
-func (handling *telegramHandling) AddHandlers(dispatcher tg.UpdateDispatcher) {
+func (handling *telegramHandling) Attach(dispatcher tg.UpdateDispatcher) {
 	dispatcher.OnNewMessage(handling.handlerMessage())
 	dispatcher.OnNewChannelMessage(handling.handlerChannelMessage())
 }
@@ -44,12 +44,15 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 		logger := handling.bootstrap.Logger
 
 		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Begin " + handler, logInfo)
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
-			return handling.genericHandleMessage(handler, ctx, e, msg)
+			handling.bootstrap.Queue.Enqueue(func (ctx context.Context) {
+				handling.genericHandleMessage(handler, ctx, e, msg)
+			})
+			return nil
 
 		case *tg.MessageService: // TODO
 			// TODO Action : tg.MessageActionGroupCall
@@ -73,12 +76,16 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 		logger := handling.bootstrap.Logger
 
 		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Channel message received", logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Begin " + handler, logInfo)
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
-			return handling.genericHandleMessage(handler, ctx, e, msg)
+			var op Op = func (ctx context.Context) {
+				handling.genericHandleMessage(handler, ctx, e, msg)
+			}
+			handling.bootstrap.Queue.Enqueue(op)
+			return nil
 
 		case *tg.MessageService: // TODO
 			// TODO Action : tg.MessageActionGroupCall
@@ -111,6 +118,8 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 
 	logger := handling.bootstrap.Logger.AddRequestID(fmt.Sprintf("td-client-%d-%s", msg.ID, RandStringBytesMaskImprSrcSB(8)))
 
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "genericHandleMessage", logInfo)
+
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
@@ -121,8 +130,6 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		LogErrorln("Chat peer not found in database", msg.GetPeerID())
 		return err
 	}
-
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message received", logInfo)
 
 	source, deepFromId := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 

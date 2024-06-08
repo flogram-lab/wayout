@@ -22,6 +22,7 @@ type Bootstrap struct {
 	TgWorkFolder  string
 	TgLogFileName string
 	ServicePort   int
+	Queue         *Queue
 }
 
 func (b *Bootstrap) Close() error {
@@ -31,8 +32,6 @@ func (b *Bootstrap) Close() error {
 func BootstrapFromEnvironment() Bootstrap {
 	servicePort := GetenvInt("FLOTG_PORT", 0, false)
 
-	var logging Logger = &dummyLogging{}
-
 	graylogAddr := GetenvStr("GRAYLOG_ADDRESS", "", false)
 	LogErrorln("GraylogGELF TCP address:", graylogAddr)
 
@@ -41,7 +40,7 @@ func BootstrapFromEnvironment() Bootstrap {
 		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
 	}
 
-	logging = NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault()
+	logging := NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
@@ -78,5 +77,6 @@ func BootstrapFromEnvironment() Bootstrap {
 		TgWorkFolder:  sessionDir,
 		TgLogFileName: logFilePath,
 		ServicePort:   servicePort,
+		Queue:         NewQueue(0),
 	}
 }

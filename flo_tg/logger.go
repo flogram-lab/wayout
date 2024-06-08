@@ -14,10 +14,10 @@ import (
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
-var defaultLogger Logger = nil
+var defaultLogger Logger = &dummyLogging{}
 
 func LogErrorln(ss ...any) {
-	s := fmt.Sprintln(ss...)
+	s := fmt.Sprintln(ss...) + "\n"
 
 	if defaultLogger == nil {
 		os.Stderr.Write([]byte(s))
@@ -27,7 +27,7 @@ func LogErrorln(ss ...any) {
 }
 
 func LogErrorf(errf string, arg ...any) {
-	s := fmt.Sprintf(errf, arg...) + "\n"
+	s := fmt.Sprintf(errf, arg...)
 	LogErrorln(s)
 }
 
@@ -64,6 +64,7 @@ func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
 		writer:     gelfWriter,
 		facility:   facility,
 		hostname:   selfHostname,
+		stderr: false,
 		requestUid: "",
 	}
 
@@ -120,6 +121,7 @@ func (logger *gelfLogger) AddRequestID(requestUid string) Logger {
 		writer:     logger.writer,
 		facility:   logger.facility,
 		hostname:   logger.hostname,
+		stderr: logger.stderr,
 		requestUid: requestUid,
 	}
 }
@@ -132,7 +134,7 @@ func (logger *gelfLogger) Message(level int32, kind string, message string, extr
 		mergo.Merge(&allExtras, ex)
 	}
 
-	stdErrMessage := fmt.Sprintf("%s: %s", kind, message)
+	stdErrMessage := fmt.Sprintf("%s: %s\n", kind, message)
 
 	if logger.requestUid != "" {
 		allExtras["request_uid"] = logger.requestUid

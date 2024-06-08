@@ -28,9 +28,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	bootstrap.Queue.Initialize(ctx)
+
 	go service.run()
+	go bootstrap.Queue.Run()
 
 	if err := CreateAndRunTelegramClient(ctx, bootstrap); err != nil {
+		bootstrap.Queue.Terminate()
+
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
 			LogErrorln("\rContext cancelled. Done")
 			os.Exit(0)
