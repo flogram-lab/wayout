@@ -15,6 +15,11 @@ services:
       - ./wayout-lib:/root/wayout-lib
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   flo_rss-devcontainer:
     build: 
@@ -27,6 +32,11 @@ services:
       - ./wayout-lib:/root/wayout-lib
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   flo_tg-devcontainer:
     build: 
@@ -50,5 +60,8 @@ services:
       - gocache:/go/cache
     networks:
       - flogram-internal
-    ports:
-      - 8920:8920
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"

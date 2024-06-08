@@ -24,6 +24,11 @@ services:
     networks:
       - default
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
   datanode:
@@ -55,6 +60,11 @@ services:
     networks:
       - flogram-internal
       - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   graylog:
     hostname: graylog
@@ -93,6 +103,11 @@ services:
     restart: on-failure
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   protoc-go:
     profiles:
@@ -115,6 +130,11 @@ services:
     volumes:
       - ./:/source
     restart: no
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   wayout-cli:
     profiles:
@@ -130,6 +150,11 @@ services:
     restart: no
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   flo_tg:
     profiles:
@@ -149,6 +174,11 @@ services:
     restart: on-failure
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   flo_rss:
     profiles:
@@ -160,3 +190,8 @@ services:
     restart: on-failure
     networks:
       - flogram-internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
