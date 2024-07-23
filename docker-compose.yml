@@ -7,10 +7,10 @@ volumes:
   telegram-session:
   wayout-cli-config:
 
-networks:
-  default:
-  flogram-internal:
-    external: true
+# networks:
+#   default:
+#   flogram-internal:
+#     external: true
 
 services:
 
@@ -21,13 +21,10 @@ services:
     volumes:
       - mongodb_data:/data/db
     restart: always
-    networks:
-      - default
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
@@ -57,13 +54,10 @@ services:
     volumes:
       - "graylog-datanode:/var/lib/graylog-datanode"
     restart: on-failure
-    networks:
-      - flogram-internal
-      - default
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   graylog:
@@ -101,12 +95,10 @@ services:
       - "graylog_data:/usr/share/graylog/data/data"
       - "graylog_journal:/usr/share/graylog/data/journal"
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   protoc-go:
@@ -133,7 +125,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   wayout-cli:
@@ -148,12 +140,10 @@ services:
     volumes:
       - wayout-cli-config:/var/lib/flogram/wayout.config
     restart: no
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   flo_tg:
@@ -172,12 +162,10 @@ services:
     volumes:
       - telegram-session:/var/run/telegram-session
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   flo_rss:
@@ -188,10 +176,8 @@ services:
       context: .
       dockerfile: flo_rss.Dockerfile
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"

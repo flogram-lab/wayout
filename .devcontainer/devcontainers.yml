@@ -13,8 +13,6 @@ services:
       dockerfile: devcontainer.swift.Dockerfile
     volumes:
       - ./wayout-lib:/root/wayout-lib
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
@@ -30,8 +28,6 @@ services:
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
@@ -45,8 +41,8 @@ services:
     env_file: .env
     environment:
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
-      GRAYLOG_ADDRESS: graylog:12201
-      MONGO_URI: mongodb://mongodb:27017
+      GRAYLOG_ADDRESS: 10.8.0.1:12201
+      MONGO_URI: mongodb://10.8.0.1:27017
       TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
@@ -58,10 +54,8 @@ services:
       - ./flo_tg:/root/flo_tg
       - gopkg:/go/pkg
       - gocache:/go/cache
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
