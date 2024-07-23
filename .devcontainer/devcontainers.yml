@@ -8,11 +8,14 @@ volumes:
 services:
 
   wayout-lib-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.swift.Dockerfile
     volumes:
       - ./wayout-lib:/root/wayout-lib
+      # using remote paths:
+      #- /remote/workspace/wayout-lib:/root/wayout-lib
     logging:
       driver: "json-file"
       options:
@@ -20,6 +23,7 @@ services:
         max-file: "3"
 
   flo_rss-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.swift.Dockerfile
@@ -28,6 +32,9 @@ services:
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
+      # using remote paths:
+      #- ./flo_rss:/root/flo_rss
+      #- ./wayout-lib:/root/wayout-lib
     logging:
       driver: "json-file"
       options:
@@ -35,14 +42,15 @@ services:
         max-file: "3"
 
   flo_tg-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.go.Dockerfile
     env_file: .env
     environment:
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
-      GRAYLOG_ADDRESS: 10.8.0.1:12201
-      MONGO_URI: mongodb://10.8.0.1:27017
+      GRAYLOG_ADDRESS: "${GRAYLOG_ADDRESS:?Please set GRAYLOG_ADDRESS in the .env file}"
+      MONGO_URI: "${MONGO_URI:?Please set MONGO_URI in the .env file}"
       TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
@@ -51,9 +59,11 @@ services:
       GOPATH: /go
     volumes:
       - telegram-session:/var/run/telegram-session
-      - ./flo_tg:/root/flo_tg
       - gopkg:/go/pkg
       - gocache:/go/cache
+      - ./flo_tg:/root/flo_tg
+      # using remote paths:
+      #- ./flo_tg:/root/flo_tg
     logging:
       driver: "json-file"
       options:

@@ -20,6 +20,8 @@ services:
     image: "mongo:7.0.6"
     volumes:
       - mongodb_data:/data/db
+    ports:
+      - 27017:27017/tcp
     restart: always
     logging:
       driver: "json-file"
