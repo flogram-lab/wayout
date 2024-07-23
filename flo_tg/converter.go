@@ -25,7 +25,7 @@ func newConverter(bootstrap Bootstrap) *converter {
 	}
 }
 
-func (c *converter) makeProtoSource(msg *tg.Message, peer storage.Peer, e tg.Entities, toUser *tg.User) (*proto.FLO_SOURCE, int64) {
+func (c *converter) makeProtoSource(_ *tg.Message, peer storage.Peer, _ tg.Entities, _ *tg.User) (*proto.FLO_SOURCE, int64) {
 
 	// TODO: proto add detection for username
 
