@@ -44,12 +44,12 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 		logger := handling.bootstrap.Logger
 
 		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Begin " + handler, logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Dispatching "+handler, logInfo)
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
-			handling.bootstrap.Queue.Enqueue(func (ctx context.Context) {
+			handling.bootstrap.Queue.Enqueue(func(ctx context.Context) {
 				handling.genericHandleMessage(handler, ctx, e, msg)
 			})
 			return nil
@@ -76,12 +76,12 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 		logger := handling.bootstrap.Logger
 
 		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Begin " + handler, logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Dispatching "+handler, logInfo)
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
-			var op Op = func (ctx context.Context) {
+			var op Op = func(ctx context.Context) {
 				handling.genericHandleMessage(handler, ctx, e, msg)
 			}
 			handling.bootstrap.Queue.Enqueue(op)

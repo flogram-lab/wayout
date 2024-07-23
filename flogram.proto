@@ -47,6 +47,7 @@ message FLO_MESSAGE {
 // flo_tg
 
 service FlotgService {
+   rpc Ready(google.protobuf.Empty) returns (google.protobuf.Empty);
    rpc GetChats(FlotgGetChatsRequest) returns (stream FlotgMonitor);
    rpc SetMonitoring(FlotgMonitor) returns (FlotgMonitor);
    rpc GetMessages(FlotgGetMessagesRequest) returns (stream FLO_MESSAGE);

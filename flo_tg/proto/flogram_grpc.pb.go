@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FlotgServiceClient interface {
+	Ready(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetChats(ctx context.Context, in *FlotgGetChatsRequest, opts ...grpc.CallOption) (FlotgService_GetChatsClient, error)
 	SetMonitoring(ctx context.Context, in *FlotgMonitor, opts ...grpc.CallOption) (*FlotgMonitor, error)
 	GetMessages(ctx context.Context, in *FlotgGetMessagesRequest, opts ...grpc.CallOption) (FlotgService_GetMessagesClient, error)
@@ -34,6 +35,15 @@ type flotgServiceClient struct {
 
 func NewFlotgServiceClient(cc grpc.ClientConnInterface) FlotgServiceClient {
 	return &flotgServiceClient{cc}
+}
+
+func (c *flotgServiceClient) Ready(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/FlotgService/Ready", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *flotgServiceClient) GetChats(ctx context.Context, in *FlotgGetChatsRequest, opts ...grpc.CallOption) (FlotgService_GetChatsClient, error) {
@@ -113,6 +123,7 @@ func (x *flotgServiceGetMessagesClient) Recv() (*FLO_MESSAGE, error) {
 // All implementations must embed UnimplementedFlotgServiceServer
 // for forward compatibility
 type FlotgServiceServer interface {
+	Ready(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	GetChats(*FlotgGetChatsRequest, FlotgService_GetChatsServer) error
 	SetMonitoring(context.Context, *FlotgMonitor) (*FlotgMonitor, error)
 	GetMessages(*FlotgGetMessagesRequest, FlotgService_GetMessagesServer) error
@@ -123,6 +134,9 @@ type FlotgServiceServer interface {
 type UnimplementedFlotgServiceServer struct {
 }
 
+func (UnimplementedFlotgServiceServer) Ready(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ready not implemented")
+}
 func (UnimplementedFlotgServiceServer) GetChats(*FlotgGetChatsRequest, FlotgService_GetChatsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetChats not implemented")
 }
@@ -143,6 +157,24 @@ type UnsafeFlotgServiceServer interface {
 
 func RegisterFlotgServiceServer(s grpc.ServiceRegistrar, srv FlotgServiceServer) {
 	s.RegisterService(&FlotgService_ServiceDesc, srv)
+}
+
+func _FlotgService_Ready_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlotgServiceServer).Ready(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/FlotgService/Ready",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlotgServiceServer).Ready(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _FlotgService_GetChats_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -212,6 +244,10 @@ var FlotgService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "FlotgService",
 	HandlerType: (*FlotgServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Ready",
+			Handler:    _FlotgService_Ready_Handler,
+		},
 		{
 			MethodName: "SetMonitoring",
 			Handler:    _FlotgService_SetMonitoring_Handler,

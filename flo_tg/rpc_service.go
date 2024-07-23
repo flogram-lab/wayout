@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 
 	"github.com/flogram-lab/wayout/flo_tg/proto"
@@ -80,6 +81,11 @@ func (service *rpcService) run() error {
 	})
 
 	return errors.Wrap(err, "grpcServer.Serve() returned with error")
+}
+
+func (service rpcService) Ready(ctx context.Context, request *emptypb.Empty) (*emptypb.Empty, error) {
+	defer ctx.Done()
+	return &emptypb.Empty{}, nil // FIXME
 }
 
 func (service rpcService) GetChats(request *proto.FlotgGetChatsRequest, stream proto.FlotgService_GetChatsServer) error {
