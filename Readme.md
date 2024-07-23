@@ -32,14 +32,13 @@ I copied `.env.example` as `.env` to create configuration.
 
 ## Run
 
- - When I change `TG_PHONE` authorization in Telegram using interactive mode is required.
+ - When I change `TG_PHONE`, authorization in Telegram using interactive mode is required.
 
-      $ docker-compose run -it flo_tg
-
+            $ docker-compose run -it flo_tg
 
 When it did not ask to enter SMS code, I am ready to go in non-interactive (normal) mode:
 
-      $ docker-compose --profile main up -d
+            $ docker-compose --profile main up -d
 
 -----
 
@@ -47,9 +46,11 @@ When it did not ask to enter SMS code, I am ready to go in non-interactive (norm
 
 TODO: Installing CLI alias to compose run
 
-flo_tg
+wayout-cli (service client)
 
-      $ wayout conf
+flo_tg service commands
+
+      $ wayout ready
 
       $ wayout sources
       $ wayout sources --monitored
@@ -58,7 +59,7 @@ flo_tg
       $ wayout source --stream 3773432
       $ wayout source --off 3773432
 
-flo_rss
+flo_rss service commands
 
       $ wayout rss
 
