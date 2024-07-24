@@ -15,21 +15,6 @@ import (
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
-type storedSource struct {
-	ID        string             `bson:"_id"`
-	CreatedAt primitive.DateTime `bson:"created_at"`
-	Source    *proto.FLO_SOURCE  `bson:"source"`
-	SourceRPC primitive.Binary   `bson:"source_rpc"`
-}
-
-type storedMessage struct {
-	ID               string             `bson:"_id"`
-	CreatedAt        primitive.DateTime `bson:"created_at"`
-	MessageCreatedAt primitive.DateTime `bson:"message_created_at"`
-	Message          *proto.FLO_MESSAGE `bson:"message"`
-	MessageRPC       primitive.Binary   `bson:"message_rpc"`
-}
-
 type storageSave struct {
 	storage *Storage
 	logger  Logger

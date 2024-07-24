@@ -43,7 +43,10 @@ func BootstrapFromEnvironment() Bootstrap {
 		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
 	}
 
-	facility := GetenvStr("LOG_FACILITY_PREFIX", "", true) + Graylog_Facility
+	facility := Graylog_Facility
+	if prefix := GetenvStr("LOG_FACILITY_PREFIX", "", true); prefix != "" {
+		facility = prefix + "-" + facility
+	}
 
 	logger := NewGraylogTCPLogger(facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
 

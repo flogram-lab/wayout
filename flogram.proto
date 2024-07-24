@@ -52,20 +52,22 @@ service FlotgService {
    rpc GetMessages(FlotgGetMessagesRequest) returns (stream FLO_MESSAGE);
 }
 
-message FlotgGetMessagesRequest {
+message FlotgGetSourcesRequest {
    int32 flags = 1;
 
    repeated string source_uids = 2;
 
-   //optional google.protobuf.Timestamp messages_since = 3;
-   //optional google.protobuf.Timestamp messages_before = 4;
-   repeated int32 filter_flags = 5;
+   repeated int32 filter_flags = 3;
 }
 
-message FlotgGetSourcesRequest {
+message FlotgGetMessagesRequest {
    int32 flags = 1;
 
-   repeated int32 filter_flags = 2;
+   string source_uid = 2;
+
+   repeated int32 filter_flags = 3;
+   //optional google.protobuf.Timestamp messages_since =
+   //optional google.protobuf.Timestamp messages_before =
 }
 
 // ------------------------------------------------------------------------------------------------------

@@ -33,24 +33,42 @@ func (handling *telegramHandling) Attach(dispatcher tg.UpdateDispatcher) {
 	dispatcher.OnNewChannelMessage(handling.handlerChannelMessage())
 }
 
+func (handling *telegramHandling) requestFromMessage(handler string, logInfo map[string]any, msg tg.MessageClass) (Logger, error) {
+	logger := handling.bootstrap.Logger
+
+	if msg == nil {
+		handling.bootstrap.Logger.Message(gelf.LOG_ERR, "telegram_handling", "Message is nil", logInfo)
+		return logger, errors.New("Update.Message is nil")
+	}
+
+	logger = logger.AddRequestID(fmt.Sprintf("td-message-%d-%s", msg.GetID(), RandStringBytesMaskImprSrcSB(8)))
+
+	logInfo["debug_td_msg_type"] = reflect.TypeOf(msg).String()
+	logInfo["debug_td_msg_type_tlid"] = msg.TypeID()
+
+	return logger, nil
+}
+
 func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage) error {
 		handler := "handlerMessage"
-
 		logInfo := map[string]interface{}{
-			"handler":  handler,
-			"entities": e,
+			"handler":              handler,
+			"entities":             e,
+			"debug_td_update_type": reflect.TypeOf(u).String(),
 		}
-		logger := handling.bootstrap.Logger
 
-		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Dispatching "+handler, logInfo)
+		logger, err := handling.requestFromMessage(handler, logInfo, u.Message)
+		if err != nil {
+			return err
+		}
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
+			logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handling (message) as genericHandleMessage", logInfo)
 			handling.bootstrap.Queue.Enqueue(func(ctx context.Context) {
-				handling.genericHandleMessage(handler, ctx, e, msg)
+				handling.genericHandleMessage(handler, ctx, e, msg, logger)
 			})
 			return nil
 
@@ -67,22 +85,25 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 
 func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
+
 		handler := "handlerChannelMessage"
-
 		logInfo := map[string]interface{}{
-			"handler":  handler,
-			"entities": e,
+			"handler":              handler,
+			"entities":             e,
+			"debug_td_update_type": reflect.TypeOf(u).String(),
 		}
-		logger := handling.bootstrap.Logger
 
-		logInfo["debug_td_msg_type"] = reflect.TypeOf(u.Message).String()
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Dispatching "+handler, logInfo)
+		logger, err := handling.requestFromMessage(handler, logInfo, u.Message)
+		if err != nil {
+			return err
+		}
 
 		switch msg := u.Message.(type) {
 
 		case *tg.Message:
+			logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handling (channel message) as genericHandleMessage", logInfo)
 			var op Op = func(ctx context.Context) {
-				handling.genericHandleMessage(handler, ctx, e, msg)
+				handling.genericHandleMessage(handler, ctx, e, msg, logger)
 			}
 			handling.bootstrap.Queue.Enqueue(op)
 			return nil
@@ -98,7 +119,7 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 	}
 }
 
-func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message) error {
+func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message, logger Logger) error {
 
 	logInfo := map[string]interface{}{
 		"handler":     handler,
@@ -110,8 +131,6 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"message_uid": msg.ID,
 		"is_post":     msg.Post,
 	}
-
-	logger := handling.bootstrap.Logger.AddRequestID(fmt.Sprintf("td-client-%d-%s", msg.ID, RandStringBytesMaskImprSrcSB(8)))
 
 	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "genericHandleMessage", logInfo)
 

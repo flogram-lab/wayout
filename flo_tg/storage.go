@@ -9,6 +9,7 @@ import (
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
+// TODO: remove (unused)
 type StorageObjectID string
 
 const (

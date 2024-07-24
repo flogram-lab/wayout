@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/flogram-lab/wayout/flo_tg/proto"
-	protobuf "github.com/gogo/protobuf/proto"
+	protobuf_proto "github.com/golang/protobuf/proto"
 	"github.com/gotd/contrib/storage"
 	"github.com/gotd/td/tg"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -127,15 +127,14 @@ func (c *converter) encodeToJson(m any, pretty bool) string {
 	return string(data)
 }
 
-func (c *converter) encodeRpcToBytes(m protobuf.Message) []byte {
+func (c *converter) encodeRpcToBytes(m protobuf_proto.Message) []byte {
+	rpcbytes, err := protobuf_proto.Marshal(m)
 
-	rpcbytes, err := protobuf.Marshal(m)
 	if err != nil {
-		logInfo := map[string]interface{}{
+		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", map[string]any{
 			"err":       err.Error(),
 			"debug_rpc": c.encodeToJson(m, true),
-		}
-		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", logInfo)
+		})
 
 		return nil
 	}

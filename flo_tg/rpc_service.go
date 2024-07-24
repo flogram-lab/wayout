@@ -12,6 +12,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
@@ -26,6 +27,8 @@ type rpcService struct {
 	listener  net.Listener
 	server    *grpc.Server
 	opts      []grpc.ServerOption
+
+	converter *converter
 }
 
 func (service *rpcService) Close() error {
@@ -102,6 +105,8 @@ func (service *rpcService) Init() error {
 
 	service.listener, err = net.Listen("tcp", address)
 
+	service.converter = newConverter(service.bootstrap)
+
 	return err
 }
 
@@ -134,16 +139,111 @@ func (service rpcService) Ready(ctx context.Context, request *emptypb.Empty) (*e
 	defer ctx.Done()
 
 	// TODO: check if queue is initialized and healthy, and telegram client is still running.
+	if !service.bootstrap.Queue.IsReady() {
+		return &emptypb.Empty{}, errors.New("not ready: queue")
+	}
 
-	return &emptypb.Empty{}, nil // no error means ready
+	return &emptypb.Empty{}, nil
 }
 
 func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stream proto.FlotgService_GetSourcesServer) error {
 	defer stream.Context().Done()
-	return errors.New("REALLY not implemented function") // FIXME
+
+	const method = "GetSources"
+
+	peerAddress := ""
+	if peer, ok := peer.FromContext(stream.Context()); ok {
+		peerAddress = peer.Addr.String()
+	}
+
+	logInfo := map[string]any{
+		"debug_rpc_request": service.converter.encodeToJson(request, false),
+		"peer_addr":         peerAddress,
+		"service":           "flo_tg",
+		"method":            method,
+	}
+
+	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
+	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
+
+	read := storageRead{
+		storage: service.bootstrap.Storage,
+		logger:  logger,
+	}
+
+	result, err := read.Sources(stream.Context(), request.SourceUids...)
+	if err != nil {
+		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Sources fail", logInfo, map[string]any{
+			"err":               err,
+			"debug_rpc_request": service.converter.encodeToJson(request, false),
+		})
+		if result == nil {
+			return errors.New("storage read operation failed on backend")
+		}
+	}
+
+	for i := range result {
+		err := stream.Send(result[i].Source)
+		if err != nil {
+			logger.Message(gelf.LOG_ERR, "rpc_service", "gRPC Stream.Send() fail", logInfo, map[string]any{
+				"err": err,
+			})
+			return errors.New("streaming failed on backend")
+		}
+	}
+
+	logger.Message(gelf.LOG_DEBUG, "rpc_service", "Request "+method+" completed", logInfo)
+
+	return nil
 }
 
 func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, stream proto.FlotgService_GetMessagesServer) error {
 	defer stream.Context().Done()
-	return errors.New("REALLY not implemented function") // FIXME
+
+	const method = "GetMessages"
+
+	peerAddress := ""
+	if peer, ok := peer.FromContext(stream.Context()); ok {
+		peerAddress = peer.Addr.String()
+	}
+
+	logInfo := map[string]any{
+		"debug_rpc_request": service.converter.encodeToJson(request, false),
+		"peer_addr":         peerAddress,
+		"service":           "flo_tg",
+		"method":            method,
+	}
+
+	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
+	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
+
+	read := storageRead{
+		storage: service.bootstrap.Storage,
+		logger:  logger,
+	}
+
+	result, err := read.Messages(stream.Context(), request.SourceUid)
+	if err != nil {
+		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Messages fail", logInfo, map[string]any{
+			"err":               err,
+			"debug_rpc_request": service.converter.encodeToJson(request, false),
+		})
+		if result == nil {
+			return errors.New("storage read operation failed on backend")
+		}
+	}
+
+	for i := range result {
+		err := stream.Send(result[i].Message)
+		if err != nil {
+			logger.Message(gelf.LOG_ERR, "rpc_service", "gRPC Stream.Send() fail", logInfo, map[string]any{
+				"err": err,
+			})
+			return errors.New("streaming failed on backend")
+		}
+	}
+
+	logger.Message(gelf.LOG_DEBUG, "rpc_service", "Request "+method+" completed", logInfo)
+
+	return nil
 }

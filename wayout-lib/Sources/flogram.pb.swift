@@ -119,7 +119,7 @@ public struct FLO_MESSAGE: Sendable {
   fileprivate var _createdAt: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-public struct FlotgGetMessagesRequest: Sendable {
+public struct FlotgGetSourcesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -128,8 +128,6 @@ public struct FlotgGetMessagesRequest: Sendable {
 
   public var sourceUids: [String] = []
 
-  ///optional google.protobuf.Timestamp messages_since = 3;
-  ///optional google.protobuf.Timestamp messages_before = 4;
   public var filterFlags: [Int32] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -137,13 +135,17 @@ public struct FlotgGetMessagesRequest: Sendable {
   public init() {}
 }
 
-public struct FlotgGetSourcesRequest: Sendable {
+public struct FlotgGetMessagesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var flags: Int32 = 0
 
+  public var sourceUid: String = String()
+
+  ///optional google.protobuf.Timestamp messages_since =
+  ///optional google.protobuf.Timestamp messages_before =
   public var filterFlags: [Int32] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -312,12 +314,12 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
   }
 }
 
-extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "FlotgGetMessagesRequest"
+extension FlotgGetSourcesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "FlotgGetSourcesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
     2: .standard(proto: "source_uids"),
-    5: .standard(proto: "filter_flags"),
+    3: .standard(proto: "filter_flags"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -328,7 +330,7 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
       case 2: try { try decoder.decodeRepeatedStringField(value: &self.sourceUids) }()
-      case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.filterFlags) }()
+      case 3: try { try decoder.decodeRepeatedInt32Field(value: &self.filterFlags) }()
       default: break
       }
     }
@@ -342,12 +344,12 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
       try visitor.visitRepeatedStringField(value: self.sourceUids, fieldNumber: 2)
     }
     if !self.filterFlags.isEmpty {
-      try visitor.visitPackedInt32Field(value: self.filterFlags, fieldNumber: 5)
+      try visitor.visitPackedInt32Field(value: self.filterFlags, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: FlotgGetMessagesRequest, rhs: FlotgGetMessagesRequest) -> Bool {
+  public static func ==(lhs: FlotgGetSourcesRequest, rhs: FlotgGetSourcesRequest) -> Bool {
     if lhs.flags != rhs.flags {return false}
     if lhs.sourceUids != rhs.sourceUids {return false}
     if lhs.filterFlags != rhs.filterFlags {return false}
@@ -356,11 +358,12 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension FlotgGetSourcesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "FlotgGetSourcesRequest"
+extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "FlotgGetMessagesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
-    2: .standard(proto: "filter_flags"),
+    2: .standard(proto: "source_uid"),
+    3: .standard(proto: "filter_flags"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -370,7 +373,8 @@ extension FlotgGetSourcesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageI
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeRepeatedInt32Field(value: &self.filterFlags) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.sourceUid) }()
+      case 3: try { try decoder.decodeRepeatedInt32Field(value: &self.filterFlags) }()
       default: break
       }
     }
@@ -380,14 +384,18 @@ extension FlotgGetSourcesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
+    if !self.sourceUid.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceUid, fieldNumber: 2)
+    }
     if !self.filterFlags.isEmpty {
-      try visitor.visitPackedInt32Field(value: self.filterFlags, fieldNumber: 2)
+      try visitor.visitPackedInt32Field(value: self.filterFlags, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: FlotgGetSourcesRequest, rhs: FlotgGetSourcesRequest) -> Bool {
+  public static func ==(lhs: FlotgGetMessagesRequest, rhs: FlotgGetMessagesRequest) -> Bool {
     if lhs.flags != rhs.flags {return false}
+    if lhs.sourceUid != rhs.sourceUid {return false}
     if lhs.filterFlags != rhs.filterFlags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

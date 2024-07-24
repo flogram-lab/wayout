@@ -9,9 +9,12 @@ require (
 	github.com/cockroachdb/pebble v1.1.0
 	github.com/flogram-lab/wayout/flo_tg/proto v0.0.0-00010101000000-000000000000
 	github.com/go-faster/errors v0.7.1
+	github.com/gogo/protobuf v1.3.2
+	github.com/golang/protobuf v1.5.4
 	github.com/gotd/contrib v0.20.0
 	github.com/gotd/td v0.102.0
 	github.com/gotd/td/examples v0.0.0-20240520103956-1bf78b6f6d86
+	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.10
 	go.mongodb.org/mongo-driver v1.15.0
 	go.uber.org/zap v1.27.0
@@ -34,7 +37,6 @@ require (
 	github.com/getsentry/sentry-go v0.18.0 // indirect
 	github.com/go-faster/jx v1.1.0 // indirect
 	github.com/go-faster/xor v1.0.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gotd/ige v0.2.2 // indirect
 	github.com/gotd/neo v0.1.5 // indirect
@@ -42,7 +44,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.19.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
