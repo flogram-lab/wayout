@@ -8,6 +8,7 @@ import (
 	"io/ioutil" // FIXME
 	"log"
 	"net"
+	"path"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -17,12 +18,6 @@ import (
 
 	"github.com/flogram-lab/wayout/flo_tg/proto"
 	"github.com/pkg/errors"
-)
-
-const (
-	serverCertFile   = "cert/server-cert.pem"
-	serverKeyFile    = "cert/server-key.pem"
-	clientCACertFile = "cert/ca-cert.pem"
 )
 
 type rpcService struct {
@@ -48,6 +43,19 @@ func (service *rpcService) Close() error {
 }
 
 func (service *rpcService) loadTLSCredentials() (credentials.TransportCredentials, error) {
+
+	TLS_AUTHORITY := GetenvStr("TLS_AUTHORITY", "", false)
+
+	service.bootstrap.Logger.Message(gelf.LOG_DEBUG, "rpc_service", "loadTLSCredentials", map[string]any{
+		"TLS_AUTHORITY": TLS_AUTHORITY,
+	})
+
+	var (
+		serverCertFile   = path.Join(TLS_AUTHORITY, "server-cert.pem")
+		serverKeyFile    = path.Join(TLS_AUTHORITY, "server-key.pem")
+		clientCACertFile = path.Join(TLS_AUTHORITY, "ca-cert.pem")
+	)
+
 	// Load certificate of the CA who signed client's certificate
 	pemClientCA, err := ioutil.ReadFile(clientCACertFile)
 	if err != nil {
@@ -97,28 +105,28 @@ func (service *rpcService) Init() error {
 	return err
 }
 
-func (service *rpcService) Serve() error {
+func (service *rpcService) Serve() {
 
 	log.Printf("Start GRPC server at %s, TLS = %t", service.listener.Addr().String(), true)
 	err := service.server.Serve(service.listener)
 
 	if errors.Is(err, context.Canceled) {
-		service.bootstrap.Logger.Message(gelf.LOG_WARNING, "rpc_service", "ListenAndServeTLS context cancelled", map[string]any{
+		service.bootstrap.Logger.Message(gelf.LOG_WARNING, "rpc_service", "Serve() context cancelled", map[string]any{
 			"err": err,
 		})
-		return nil
+		return
 	}
 
 	if err != nil {
-		service.bootstrap.Logger.Message(gelf.LOG_ERR, "rpc_service", "ListenAndServeTLS returned with error", map[string]any{
+		service.bootstrap.Logger.Message(gelf.LOG_ERR, "rpc_service", "Serve() returned with error", map[string]any{
 			"err": err,
 		})
-		return err
+		return
 	} else {
-		service.bootstrap.Logger.Message(gelf.LOG_INFO, "rpc_service", "ListenAndServeTLS returned with no error", map[string]any{
+		service.bootstrap.Logger.Message(gelf.LOG_DEBUG, "rpc_service", "Serve() returned with no error", map[string]any{
 			"err": err,
 		})
-		return nil
+		return
 	}
 }
 

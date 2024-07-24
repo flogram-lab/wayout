@@ -57,11 +57,13 @@ services:
       TG_SESSION_PATH: /var/run/telegram-session
       GOCACHE: /go/cache
       GOPATH: /go
+      TLS_AUTHORITY: /root/tls-authority
     volumes:
       - telegram-session:/var/run/telegram-session
       - gopkg:/go/pkg
       - gocache:/go/cache
       - ./flo_tg:/root/flo_tg
+      - ./tls-authority:/root/tls-authority
       # using remote paths:
       #- ./flo_tg:/root/flo_tg
     logging:

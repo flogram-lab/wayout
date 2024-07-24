@@ -6,6 +6,7 @@ volumes:
   graylog_journal:
   telegram-session:
   wayout-cli-config:
+  tls-authority:
 
 # networks:
 #   default:
@@ -161,8 +162,10 @@ services:
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
       TG_SESSION_PATH: /var/run/telegram-session
+      TLS_AUTHORITY: /var/run/tls-authority
     volumes:
       - telegram-session:/var/run/telegram-session
+      - tls-authority:/var/run/tls-authority
     restart: on-failure
     logging:
       driver: "json-file"
