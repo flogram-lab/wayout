@@ -32,17 +32,30 @@ func (b *Bootstrap) Close() error {
 }
 
 func BootstrapFromEnvironment() Bootstrap {
+
 	servicePort := GetenvInt("FLOTG_PORT", 0, false)
 
 	graylogAddr := GetenvStr("GRAYLOG_ADDRESS", "", false)
-	LogErrorln("GraylogGELF TCP address:", graylogAddr)
 
+	// host name of current container (or system) is used for graylog message "source" field
 	selfHostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
 	}
 
-	logger := NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
+	facility := GetenvStr("LOG_FACILITY_PREFIX", "", true) + Graylog_Facility
+
+	logger := NewGraylogTCPLogger(facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
+
+	logger.Message(gelf.LOG_DEBUG, "bootstrap", "BootstrapFromEnvironment", GetenvMap(
+		"LOG_FACILITY_PREFIX",
+		"GRAYLOG_ADDRESS",
+		"MONGO_URI",
+		"FLOTG_PORT",
+		"TG_PHONE",
+		"TG_APP_ID",
+		"TG_SESSION_PATH",
+	))
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
@@ -68,7 +81,7 @@ func BootstrapFromEnvironment() Bootstrap {
 
 	logFilePath := filepath.Join(sessionDir, "log.jsonl")
 
-	logger.Message(gelf.LOG_INFO, "main", fmt.Sprintf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath))
+	logger.Message(gelf.LOG_INFO, "bootstrap", fmt.Sprintf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath))
 
 	return Bootstrap{
 		Logger:        logger,
@@ -79,6 +92,6 @@ func BootstrapFromEnvironment() Bootstrap {
 		TgWorkFolder:  sessionDir,
 		TgLogFileName: logFilePath,
 		ServicePort:   servicePort,
-		Queue:         NewQueue(0),
+		Queue:         NewQueue(200),
 	}
 }

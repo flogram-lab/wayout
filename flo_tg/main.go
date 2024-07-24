@@ -26,7 +26,7 @@ func main() {
 	service := &rpcService{bootstrap: bootstrap}
 
 	err := service.Init()
-	
+
 	if err != nil {
 		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "rpc_service.Init() failed, RPC service cannot be started", map[string]any{
 			"err": err,
@@ -51,7 +51,7 @@ func main() {
 	err = CreateAndRunTelegramClient(ctx, bootstrap)
 
 	if err != nil {
-		bootstrap.Queue.Terminate()
+		bootstrap.Queue.Stop()
 
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
 			LogErrorln("\rContext cancelled. Done")

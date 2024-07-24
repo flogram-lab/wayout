@@ -124,13 +124,13 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			}
 
 			name := self.FirstName
-			if self.Username != "" {
+			if self.LastName != "" {
 				name = fmt.Sprintf("%s, %s", name, self.LastName)
 			}
 			if self.Username != "" {
 				name = fmt.Sprintf("%s, @%s", name, self.Username)
 			}
-			bootstrap.Logger.Message(gelf.LOG_INFO, "telegram", fmt.Sprintf("Current user: %s [ID %d]\n", name, self.ID))
+			bootstrap.Logger.Message(gelf.LOG_INFO, "telegram", fmt.Sprintf("Current user: %s, %d\n", name, self.ID))
 
 			lg.Info("Login",
 				zap.String("first_name", self.FirstName),
@@ -147,7 +147,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			return updatesRecovery.Run(ctx, api, self.ID, updates.AuthOptions{
 				IsBot: self.Bot,
 				OnStart: func(ctx context.Context) {
-					LogErrorln("Update recovery initialized and started, listening for events")
+					handling.bootstrap.Logger.Message(gelf.LOG_INFO, "telegram", "Update recovery initialized and started, listening for events")
 				},
 			})
 		}); err != nil {

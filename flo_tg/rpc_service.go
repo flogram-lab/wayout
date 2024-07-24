@@ -143,11 +143,6 @@ func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stre
 	return errors.New("REALLY not implemented function") // FIXME
 }
 
-func (service rpcService) SetMonitoring(ctx context.Context, request *proto.FlotgMonitor) (*proto.FlotgMonitor, error) {
-	defer ctx.Done()
-	return &proto.FlotgMonitor{}, errors.New("REALLY not implemented function") // FIXME
-}
-
 func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, stream proto.FlotgService_GetMessagesServer) error {
 	defer stream.Context().Done()
 	return errors.New("REALLY not implemented function") // FIXME

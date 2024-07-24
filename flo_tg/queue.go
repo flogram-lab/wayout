@@ -1,42 +1,56 @@
 package main
 
-// A basic queue is synchronous operations pool we use to ensure that at a given time moment only one data read/write operation is exec.
-// This needed by design , since there is no need in async operations in this project.
-// RPC request handlers and telegram message handlers both end up in a shared queue of operations.
-
 import (
 	"context"
+	"time"
 )
 
+// Context passed to the operation func will tell it is cancelled if queue is stopping
 type Op func(context.Context)
 
+// Queue is synchronous operations pool used to ensure that at a given time moment only one database read/write operation is exec.
+// There is no need in async operations in this project.
+// RPC request handlers and telegram message handlers both end up in a shared queue of operations.
+// A minimum level of consistency is then guaranteed.
 type Queue struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	op     chan Op
 }
 
+// Makes new Queue (unintialized)
+// Without Initialize, Enqueue takes up to to [backlog] operations before blocked.
+// [backlog] defines number of operations pre-scheduled (pending) in queue, a non-zero value will lead to losing some if queue is Stopped
 func NewQueue(backlog int) *Queue {
 	return &Queue{
 		op: make(chan Op, backlog),
 	}
 }
 
+// Create queue context (cancellable) for Run() goroutine
+// Initializing queue must be followed by spawning Run() goroutine.
 func (q *Queue) Initialize(ctx context.Context) {
 	q.ctx, q.cancel = context.WithCancel(ctx)
 }
 
-func (q *Queue) Enqueue(op Op) {
-	q.op <- op
+// IsReady tests if queue is intiailized and was not stopped
+func (q *Queue) IsReady() bool {
+	return q.ctx != nil && q.cancel != nil && q.op != nil
 }
 
-func (q *Queue) Terminate() {
+// Stop iteration inside Run() loop, preventing executing further queued operations.
+// Pending operations on queue are lost (if non-zero backlog used)
+// Some operations including running one will not be interrupted and will proceed even after call.
+// Context passed to the operation func will tell it is cancelled if queue is stopping
+// TODO: block before Run() is exited?
+func (q *Queue) Stop() {
 	q.cancel()
 	close(q.op)
 	q.ctx = nil
 	q.cancel = nil
 }
 
+// Goroutine that performs all future operations in order.
 func (q *Queue) Run() {
 	for {
 		select {
@@ -51,10 +65,14 @@ func (q *Queue) Run() {
 	}
 }
 
-func (q *Queue) IsReady() bool {
-	return q.ctx != nil && q.cancel != nil && q.op != nil
+// Enqueue operation.
+// May block if queue blocking (is full)
+func (q *Queue) Enqueue(op Op) {
+	q.op <- op
 }
 
+// Enqueue operation and wait before it is done.
+// This function may block for unlimited time.
 func (q *Queue) EnqueueAndWait(op Op) {
 	c := make(chan bool)
 	defer close(c)
@@ -64,5 +82,26 @@ func (q *Queue) EnqueueAndWait(op Op) {
 		c <- true
 	}
 
-	<- c
+	<-c
+}
+
+// Enqueue operation and wait before it is done.
+// This function may block for unlimited time.
+// Starting operation is aborted if queue waiting time was longer than the startTimeout
+func (q *Queue) EnqueueAndWaitTimeout(startTimeout time.Duration, op Op) bool {
+	c := make(chan bool)
+	defer close(c)
+
+	started := time.Now()
+
+	q.op <- func(ctx context.Context) {
+		if time.Since(started) >= startTimeout {
+			c <- false
+		} else {
+			op(ctx)
+			c <- true
+		}
+	}
+
+	return <-c
 }
