@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/go-faster/errors"
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
 const (
@@ -40,11 +42,11 @@ func BootstrapFromEnvironment() Bootstrap {
 		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
 	}
 
-	logging := NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
+	logger := NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
-	db := NewStorageMongo(mgUri, Mongo_Database)
+	db := NewStorageMongo(mgUri, Mongo_Database, logger)
 	if err := db.Ping(); err != nil {
 		err = errors.Wrapf(err, "connect to mongodb")
 		log.Fatal(err)
@@ -66,10 +68,10 @@ func BootstrapFromEnvironment() Bootstrap {
 
 	logFilePath := filepath.Join(sessionDir, "log.jsonl")
 
-	LogErrorf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath)
+	logger.Message(gelf.LOG_INFO, "main", fmt.Sprintf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath))
 
 	return Bootstrap{
-		Logger:        logging,
+		Logger:        logger,
 		Storage:       db,
 		TgPhone:       phone,
 		TgAppId:       appID,

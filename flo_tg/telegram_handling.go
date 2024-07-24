@@ -101,11 +101,6 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message) error {
 
 	logInfo := map[string]interface{}{
-		"handler":  handler,
-		"entities": e,
-	}
-
-	logInfo = map[string]interface{}{
 		"handler":     handler,
 		"entities":    e,
 		"from_id":     msg.FromID,
@@ -127,7 +122,6 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 			"err": err.Error(),
 		})
 
-		LogErrorln("Chat peer not found in database", msg.GetPeerID())
 		return err
 	}
 
@@ -171,7 +165,6 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
 			"err": err.Error(),
 		})
-		return err
 	} else {
 		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message saved", logInfo)
 	}
