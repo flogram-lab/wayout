@@ -11,32 +11,54 @@ import (
 )
 
 func main() {
+
+	// BEGIN bootstrap
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	bootstrap := BootstrapFromEnvironment()
 	defer bootstrap.Close()
 
+	bootstrap.Logger.Message(gelf.LOG_INFO, "main", "Bootstrap OK, following launch sequence")
+
+	// BEGIN rpc_service
+
 	service := &rpcService{bootstrap: bootstrap}
 
-	err := service.bind()
+	err := service.Init()
 	if err != nil {
-		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "service.bind() failed, RPC service cannot be started", map[string]any{
+		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "rpc_service.Init() failed, RPC service cannot be started", map[string]any{
 			"err": err,
 		})
 		LogErrorln("ERR: gRPC server failed to start")
 		os.Exit(1)
 	}
 
+	defer service.Close()
+
+	err = service.Serve()
+	if err != nil {
+		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "rpc_service.Serve() returned with an error", map[string]any{
+			"err": err,
+		})
+		LogErrorln("ERR: gRPC server failed to start")
+		os.Exit(1)
+	}
+
+	// BEGIN queue
+
 	bootstrap.Queue.Initialize(ctx)
 
-	go service.run()
 	go bootstrap.Queue.Run()
+
+	// BEGIN telegram
 
 	if err := CreateAndRunTelegramClient(ctx, bootstrap); err != nil {
 		bootstrap.Queue.Terminate()
 
 		if errors.Is(err, context.Canceled) && ctx.Err() == context.Canceled {
+			bootstrap.Logger.Message(gelf.LOG_WARNING, "main", "Context cancelled (shutdown)")
 			LogErrorln("\rContext cancelled. Done")
 			os.Exit(0)
 		}
@@ -50,7 +72,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	LogErrorln("main() Done")
+	bootstrap.Logger.Message(gelf.LOG_DEBUG, "main", "main() Done")
 	os.Exit(0)
 }
 

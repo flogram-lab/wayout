@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
 type StorageObjectID string
@@ -16,11 +17,12 @@ const (
 )
 
 type Storage struct {
+	logger   Logger
 	mgClient *mongo.Client
 	dbName   string
 }
 
-func NewStorageMongo(uri string, databaseName string) *Storage {
+func NewStorageMongo(uri string, databaseName string, logger Logger) *Storage {
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
@@ -43,6 +45,8 @@ func (storage *Storage) Ping() error {
 
 func (storage *Storage) Close() {
 	if err := storage.mgClient.Disconnect(context.TODO()); err != nil {
-		LogErrorln("ERROR Close() mmongoogno connection", err)
+		storage.logger.Message(gelf.LOG_WARNING, "storage", "ERROR Close() mongodb connection", map[string]any{
+			"err": err,
+		})
 	}
 }
