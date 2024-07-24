@@ -20,7 +20,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-public enum FLAGS: SwiftProtobuf.Enum {
+public enum FLAGS: SwiftProtobuf.Enum, Swift.CaseIterable {
   public typealias RawValue = Int
   case invalid // = 0
   case v1 // = 1
@@ -58,11 +58,6 @@ public enum FLAGS: SwiftProtobuf.Enum {
     }
   }
 
-}
-
-#if swift(>=4.2)
-
-extension FLAGS: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static let allCases: [FLAGS] = [
     .invalid,
@@ -72,11 +67,10 @@ extension FLAGS: CaseIterable {
     .group,
     .channel,
   ]
+
 }
 
-#endif  // swift(>=4.2)
-
-public struct FLO_SOURCE {
+public struct FLO_SOURCE: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -92,7 +86,7 @@ public struct FLO_SOURCE {
   public init() {}
 }
 
-public struct FLO_MESSAGE {
+public struct FLO_MESSAGE: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -125,34 +119,7 @@ public struct FLO_MESSAGE {
   fileprivate var _createdAt: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-public struct FlotgMonitor {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var flags: Int32 = 0
-
-  public var source: FLO_SOURCE {
-    get {return _source ?? FLO_SOURCE()}
-    set {_source = newValue}
-  }
-  /// Returns true if `source` has been explicitly set.
-  public var hasSource: Bool {return self._source != nil}
-  /// Clears the value of `source`. Subsequent reads from it will return its default value.
-  public mutating func clearSource() {self._source = nil}
-
-  public var monitoringEnabled: Bool = false
-
-  public var cachedLastMessageTimes: [SwiftProtobuf.Google_Protobuf_Timestamp] = []
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _source: FLO_SOURCE? = nil
-}
-
-public struct FlotgGetMessagesRequest {
+public struct FlotgGetMessagesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -161,35 +128,16 @@ public struct FlotgGetMessagesRequest {
 
   public var sourceUids: [String] = []
 
-  public var messagesSince: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _messagesSince ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_messagesSince = newValue}
-  }
-  /// Returns true if `messagesSince` has been explicitly set.
-  public var hasMessagesSince: Bool {return self._messagesSince != nil}
-  /// Clears the value of `messagesSince`. Subsequent reads from it will return its default value.
-  public mutating func clearMessagesSince() {self._messagesSince = nil}
-
-  public var messagesBefore: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _messagesBefore ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_messagesBefore = newValue}
-  }
-  /// Returns true if `messagesBefore` has been explicitly set.
-  public var hasMessagesBefore: Bool {return self._messagesBefore != nil}
-  /// Clears the value of `messagesBefore`. Subsequent reads from it will return its default value.
-  public mutating func clearMessagesBefore() {self._messagesBefore = nil}
-
+  ///optional google.protobuf.Timestamp messages_since = 3;
+  ///optional google.protobuf.Timestamp messages_before = 4;
   public var filterFlags: [Int32] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
-
-  fileprivate var _messagesSince: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _messagesBefore: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-public struct FlotgGetChatsRequest {
+public struct FlotgGetSourcesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -203,7 +151,7 @@ public struct FlotgGetChatsRequest {
   public init() {}
 }
 
-public struct FloRssFeed {
+public struct FloRssFeed: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -221,7 +169,7 @@ public struct FloRssFeed {
   public init() {}
 }
 
-public struct FloRssCreateRequest {
+public struct FloRssCreateRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -234,17 +182,6 @@ public struct FloRssCreateRequest {
 
   public init() {}
 }
-
-#if swift(>=5.5) && canImport(_Concurrency)
-extension FLAGS: @unchecked Sendable {}
-extension FLO_SOURCE: @unchecked Sendable {}
-extension FLO_MESSAGE: @unchecked Sendable {}
-extension FlotgMonitor: @unchecked Sendable {}
-extension FlotgGetMessagesRequest: @unchecked Sendable {}
-extension FlotgGetChatsRequest: @unchecked Sendable {}
-extension FloRssFeed: @unchecked Sendable {}
-extension FloRssCreateRequest: @unchecked Sendable {}
-#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
@@ -375,67 +312,11 @@ extension FLO_MESSAGE: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
   }
 }
 
-extension FlotgMonitor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "FlotgMonitor"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "flags"),
-    2: .same(proto: "source"),
-    3: .standard(proto: "monitoring_enabled"),
-    4: .standard(proto: "cached_last_message_times"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._source) }()
-      case 3: try { try decoder.decodeSingularBoolField(value: &self.monitoringEnabled) }()
-      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.cachedLastMessageTimes) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if self.flags != 0 {
-      try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
-    }
-    try { if let v = self._source {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    } }()
-    if self.monitoringEnabled != false {
-      try visitor.visitSingularBoolField(value: self.monitoringEnabled, fieldNumber: 3)
-    }
-    if !self.cachedLastMessageTimes.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.cachedLastMessageTimes, fieldNumber: 4)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: FlotgMonitor, rhs: FlotgMonitor) -> Bool {
-    if lhs.flags != rhs.flags {return false}
-    if lhs._source != rhs._source {return false}
-    if lhs.monitoringEnabled != rhs.monitoringEnabled {return false}
-    if lhs.cachedLastMessageTimes != rhs.cachedLastMessageTimes {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
 extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = "FlotgGetMessagesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
     2: .standard(proto: "source_uids"),
-    3: .standard(proto: "messages_since"),
-    4: .standard(proto: "messages_before"),
     5: .standard(proto: "filter_flags"),
   ]
 
@@ -447,8 +328,6 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.flags) }()
       case 2: try { try decoder.decodeRepeatedStringField(value: &self.sourceUids) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._messagesSince) }()
-      case 4: try { try decoder.decodeSingularMessageField(value: &self._messagesBefore) }()
       case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.filterFlags) }()
       default: break
       }
@@ -456,22 +335,12 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
     if self.flags != 0 {
       try visitor.visitSingularInt32Field(value: self.flags, fieldNumber: 1)
     }
     if !self.sourceUids.isEmpty {
       try visitor.visitRepeatedStringField(value: self.sourceUids, fieldNumber: 2)
     }
-    try { if let v = self._messagesSince {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    } }()
-    try { if let v = self._messagesBefore {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    } }()
     if !self.filterFlags.isEmpty {
       try visitor.visitPackedInt32Field(value: self.filterFlags, fieldNumber: 5)
     }
@@ -481,16 +350,14 @@ extension FlotgGetMessagesRequest: SwiftProtobuf.Message, SwiftProtobuf._Message
   public static func ==(lhs: FlotgGetMessagesRequest, rhs: FlotgGetMessagesRequest) -> Bool {
     if lhs.flags != rhs.flags {return false}
     if lhs.sourceUids != rhs.sourceUids {return false}
-    if lhs._messagesSince != rhs._messagesSince {return false}
-    if lhs._messagesBefore != rhs._messagesBefore {return false}
     if lhs.filterFlags != rhs.filterFlags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension FlotgGetChatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "FlotgGetChatsRequest"
+extension FlotgGetSourcesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "FlotgGetSourcesRequest"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "flags"),
     2: .standard(proto: "filter_flags"),
@@ -519,7 +386,7 @@ extension FlotgGetChatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: FlotgGetChatsRequest, rhs: FlotgGetChatsRequest) -> Bool {
+  public static func ==(lhs: FlotgGetSourcesRequest, rhs: FlotgGetSourcesRequest) -> Bool {
     if lhs.flags != rhs.flags {return false}
     if lhs.filterFlags != rhs.filterFlags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

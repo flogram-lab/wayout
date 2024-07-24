@@ -138,7 +138,7 @@ func (service rpcService) Ready(ctx context.Context, request *emptypb.Empty) (*e
 	return &emptypb.Empty{}, nil // no error means ready
 }
 
-func (service rpcService) GetChats(request *proto.FlotgGetChatsRequest, stream proto.FlotgService_GetChatsServer) error {
+func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stream proto.FlotgService_GetSourcesServer) error {
 	defer stream.Context().Done()
 	return errors.New("REALLY not implemented function") // FIXME
 }

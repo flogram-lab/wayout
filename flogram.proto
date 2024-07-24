@@ -48,19 +48,8 @@ message FLO_MESSAGE {
 
 service FlotgService {
    rpc Ready(google.protobuf.Empty) returns (google.protobuf.Empty);
-   rpc GetChats(FlotgGetChatsRequest) returns (stream FlotgMonitor);
-   rpc SetMonitoring(FlotgMonitor) returns (FlotgMonitor);
+   rpc GetSources(FlotgGetSourcesRequest) returns (stream FLO_SOURCE);
    rpc GetMessages(FlotgGetMessagesRequest) returns (stream FLO_MESSAGE);
-}
-
-message FlotgMonitor {
-   int32 flags = 1;
-
-   FLO_SOURCE source = 2;
-
-   bool monitoring_enabled = 3;
-
-   repeated google.protobuf.Timestamp cached_last_message_times = 4;
 }
 
 message FlotgGetMessagesRequest {
@@ -68,12 +57,12 @@ message FlotgGetMessagesRequest {
 
    repeated string source_uids = 2;
 
-   optional google.protobuf.Timestamp messages_since = 3;
-   optional google.protobuf.Timestamp messages_before = 4;
+   //optional google.protobuf.Timestamp messages_since = 3;
+   //optional google.protobuf.Timestamp messages_before = 4;
    repeated int32 filter_flags = 5;
 }
 
-message FlotgGetChatsRequest {
+message FlotgGetSourcesRequest {
    int32 flags = 1;
 
    repeated int32 filter_flags = 2;
