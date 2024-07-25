@@ -194,6 +194,8 @@ services:
       - telegram-session:/var/run/telegram-session
       - tls-authority:/var/run/tls-authority
     restart: on-failure
+    ports:
+      - 8920:8920/tcp
     logging:
       driver: "json-file"
       options:
