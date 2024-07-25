@@ -8,11 +8,6 @@ volumes:
   wayout-cli-config:
   tls-authority:
 
-# networks:
-#   default:
-#   flogram-internal:
-#     external: true
-
 services:
 
   mongodb:

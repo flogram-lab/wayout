@@ -1,94 +1,76 @@
+# Wayout Node Installation
 
-# Installation
+## Requirements
 
-      $ docker network create --driver bridge flogram-internal
+- Visual Studio Code
+- Devcontainers extension
+- Docker Desktop
+- Minimum: 8 GB RAM, 32 GB SSD, 4 CPU
+
+## Connectivity notice
+
+Compose stack exposes TCP/UDP ports of Graylog and its Datanode to host.
+
+Note: you can use remote docker context (server) for **bedrock** and make services use external host for graylog/mongodb, to saves resources. 
+VPN is required for encrypting communications.
+
+Multi-server setup is not document at this moment.
+
+## Configuration
+
+Copy `.env.example` as `.env` to create configuration.
+ 
+[Create Telegram App](https://core.telegram.org/api/obtaining_api_id) and saved APP_ tokens given by Telegram to the `.env` file.
+
+ TODO: changeme-host.com ?
+
+## Bedrock
+
+Bedrock starting (must be configured before main)
 
       $ docker-compose --profile bedrock up -d
 
-Before running Wayout, I had to:
+First time requirements:
 
  1. Preflight initialize graylog and provision certificate to the datanode using the web browser UI. The password for Basic Auth was printend in container log.
 
  2. Add **GELF TCP** source in **System > Inputs** with default port. This allows services to log messages to Graylog, which is important for error and problem tracing.
 
- - If I need to compile images from sources
-
-      $ docker-compose --profile main build
-
-## Configuration
-
-I copied `.env.example` as `.env` to create configuration.
-
- - Wayout uses tdlib to act as a console Telegram client (flo_tg)
- 
- I've [created my Telegram App](https://core.telegram.org/api/obtaining_api_id) and saved APP_ tokens given by Telegram to the `.env` file.
-
- TODO: changeme-host.com ?
-
-## Run
+## Main
 
 TODO: make tls-authority, sharing certs, and running telegram login without gRPC?
 
- - When I change `TG_PHONE`, authorization in Telegram using interactive mode is required.
+ - Compile images from sources (once)
+
+            $ docker-compose --profile main build
+
+ - Authorization in Telegram using __interactive mode__ is required, if `TG_PHONE` has changed, or session is not created yet.
 
             $ docker-compose run -it flo_tg
 
-When it did not ask to enter SMS code, I am ready to go in non-interactive (normal) mode:
+ - When authorized, normal (non-interactive) mode is fine.
 
             $ docker-compose --profile main up -d
 
------
+## Volumes TODO
 
-### CLI
+### CLI TODO: how to use evans.sh?
 
-TODO: Installing CLI alias to compose run
+# Development
 
-wayout-cli (service client)
+ - Extending is mostly done using gRPC API (protobuf) (or flo_rss HTTP endpoint)
 
-flo_tg service commands
+ - Use VS Code and **Devcontainers extension** (command: "Reopen in container" for debug)
 
-      $ wayout ready
-
-      $ wayout sources
-      $ wayout sources --monitored
-
-      $ wayout source --on 3773432
-      $ wayout source --stream 3773432
-      $ wayout source --off 3773432
-
-flo_rss service commands
-
-      $ wayout rss
-
-      $ wayout rss --url 3773432
-      $ wayout rss --add 3773432
-      $ wayout rss --rm 3773432
-
-
-If monitoring was not turned on for a source, new messages are not saved/streamed.
-
-### Connectivity
-
-Basic `docker-compose.yml` only exposes TCP/UDP ports of Graylog and its Datanode to host.
-
-Containers linked to the `flogram-internal` bridged network can reach each other.
-
-### Development
-
-##### Requirements
-
-- Visual Studio Code
-- Devcontainers extension
-
-#### Extending
+## Extending
 
 To programmaticaly receive messages saved in monitored sources, a gRPC client could be written.
 
-[flogram-lab/lazyr](https://github.com/flogram-lab/lazyr) is an example in Swift.
+ - [lazyr](https://github.com/flogram-lab/lazyr) is an example in Swift.
 
- `github.com/flogram-lab/wayout/flo_tg/proto` is to be imported in Go programs.
+ - `github.com/flogram-lab/wayout/flo_tg/proto` is to be imported in Go programs.
 
-#### Compile gRPC changes
+## Compile gRPC changes
 
 Compiling protobuf files and updating go/swift sources is done inside docker. Simply:
 
