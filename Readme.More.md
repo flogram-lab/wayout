@@ -23,6 +23,8 @@ I copied `.env.example` as `.env` to create configuration.
  
  I've [created my Telegram App](https://core.telegram.org/api/obtaining_api_id) and saved APP_ tokens given by Telegram to the `.env` file.
 
+ TODO: changeme-host.com ?
+
 ## Run
 
 TODO: make tls-authority, sharing certs, and running telegram login without gRPC?
