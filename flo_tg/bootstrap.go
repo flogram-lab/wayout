@@ -64,8 +64,11 @@ func BootstrapFromEnvironment() Bootstrap {
 
 	db := NewStorageMongo(mgUri, Mongo_Database, logger)
 	if err := db.Ping(); err != nil {
-		err = errors.Wrapf(err, "connect to mongodb")
-		log.Fatal(err)
+		err = errors.Wrapf(err, "ping mongodb failed")
+		logger.Message(gelf.LOG_CRIT, "bootstrap", "Storage failed", map[string]any{
+			"err": err,
+		})
+		os.Exit(1)
 	}
 
 	phone := GetenvStr("TG_PHONE", "", false)
