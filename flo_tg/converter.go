@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/flogram-lab/wayout/flo_tg/proto"
-	protobuf "github.com/gogo/protobuf/proto"
+	protobuf_proto "github.com/golang/protobuf/proto"
 	"github.com/gotd/contrib/storage"
 	"github.com/gotd/td/tg"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -25,7 +25,7 @@ func newConverter(bootstrap Bootstrap) *converter {
 	}
 }
 
-func (c *converter) makeProtoSource(msg *tg.Message, peer storage.Peer, e tg.Entities, toUser *tg.User) (*proto.FLO_SOURCE, int64) {
+func (c *converter) makeProtoSource(_ *tg.Message, peer storage.Peer, _ tg.Entities, _ *tg.User) (*proto.FLO_SOURCE, int64) {
 
 	// TODO: proto add detection for username
 
@@ -114,7 +114,7 @@ func (c *converter) encodeToJson(m any, pretty bool) string {
 	}
 
 	if err != nil {
-		logInfo := map[string]interface{}{
+		logInfo := map[string]any{
 			"err":        err.Error(),
 			"prettty":    pretty,
 			"debug_type": reflect.TypeOf(m),
@@ -127,15 +127,14 @@ func (c *converter) encodeToJson(m any, pretty bool) string {
 	return string(data)
 }
 
-func (c *converter) encodeRpcToBytes(m protobuf.Message) []byte {
+func (c *converter) encodeRpcToBytes(m protobuf_proto.Message) []byte {
+	rpcbytes, err := protobuf_proto.Marshal(m)
 
-	rpcbytes, err := protobuf.Marshal(m)
 	if err != nil {
-		logInfo := map[string]interface{}{
+		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", map[string]any{
 			"err":       err.Error(),
 			"debug_rpc": c.encodeToJson(m, true),
-		}
-		c.bootstrap.Logger.Message(gelf.LOG_ERR, "converter", "encodeRpcToBytes failed to marshal protobuf message as binary", logInfo)
+		})
 
 		return nil
 	}

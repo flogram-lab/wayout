@@ -40,3 +40,13 @@ func GetenvInt(key string, defaultValue int, allowNull bool) int {
 
 	return i
 }
+
+// Using os.Getenv, get map of key=value strings from environment
+func GetenvMap(keys ...string) map[string]any {
+	v := make(map[string]any, len(keys))
+	for i := range keys {
+		key := keys[i]
+		v[key] = os.Getenv(key)
+	}
+	return v
+}

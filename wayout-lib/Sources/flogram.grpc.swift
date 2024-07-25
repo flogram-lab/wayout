@@ -16,16 +16,16 @@ public protocol FlotgServiceClientProtocol: GRPCClient {
   var serviceName: String { get }
   var interceptors: FlotgServiceClientInterceptorFactoryProtocol? { get }
 
-  func getChats(
-    _ request: FlotgGetChatsRequest,
-    callOptions: CallOptions?,
-    handler: @escaping (FlotgMonitor) -> Void
-  ) -> ServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor>
-
-  func setMonitoring(
-    _ request: FlotgMonitor,
+  func ready(
+    _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions?
-  ) -> UnaryCall<FlotgMonitor, FlotgMonitor>
+  ) -> UnaryCall<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty>
+
+  func getSources(
+    _ request: FlotgGetSourcesRequest,
+    callOptions: CallOptions?,
+    handler: @escaping (FLO_SOURCE) -> Void
+  ) -> ServerStreamingCall<FlotgGetSourcesRequest, FLO_SOURCE>
 
   func getMessages(
     _ request: FlotgGetMessagesRequest,
@@ -39,42 +39,42 @@ extension FlotgServiceClientProtocol {
     return "FlotgService"
   }
 
-  /// Server streaming call to GetChats
+  /// Unary call to Ready
   ///
   /// - Parameters:
-  ///   - request: Request to send to GetChats.
+  ///   - request: Request to send to Ready.
   ///   - callOptions: Call options.
-  ///   - handler: A closure called when each response is received from the server.
-  /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func getChats(
-    _ request: FlotgGetChatsRequest,
-    callOptions: CallOptions? = nil,
-    handler: @escaping (FlotgMonitor) -> Void
-  ) -> ServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor> {
-    return self.makeServerStreamingCall(
-      path: FlotgServiceClientMetadata.Methods.getChats.path,
+  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+  public func ready(
+    _ request: SwiftProtobuf.Google_Protobuf_Empty,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty> {
+    return self.makeUnaryCall(
+      path: FlotgServiceClientMetadata.Methods.ready.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetChatsInterceptors() ?? [],
-      handler: handler
+      interceptors: self.interceptors?.makeReadyInterceptors() ?? []
     )
   }
 
-  /// Unary call to SetMonitoring
+  /// Server streaming call to GetSources
   ///
   /// - Parameters:
-  ///   - request: Request to send to SetMonitoring.
+  ///   - request: Request to send to GetSources.
   ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func setMonitoring(
-    _ request: FlotgMonitor,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<FlotgMonitor, FlotgMonitor> {
-    return self.makeUnaryCall(
-      path: FlotgServiceClientMetadata.Methods.setMonitoring.path,
+  ///   - handler: A closure called when each response is received from the server.
+  /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
+  public func getSources(
+    _ request: FlotgGetSourcesRequest,
+    callOptions: CallOptions? = nil,
+    handler: @escaping (FLO_SOURCE) -> Void
+  ) -> ServerStreamingCall<FlotgGetSourcesRequest, FLO_SOURCE> {
+    return self.makeServerStreamingCall(
+      path: FlotgServiceClientMetadata.Methods.getSources.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeSetMonitoringInterceptors() ?? []
+      interceptors: self.interceptors?.makeGetSourcesInterceptors() ?? [],
+      handler: handler
     )
   }
 
@@ -162,15 +162,15 @@ public protocol FlotgServiceAsyncClientProtocol: GRPCClient {
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: FlotgServiceClientInterceptorFactoryProtocol? { get }
 
-  func makeGetChatsCall(
-    _ request: FlotgGetChatsRequest,
+  func makeReadyCall(
+    _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor>
+  ) -> GRPCAsyncUnaryCall<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty>
 
-  func makeSetMonitoringCall(
-    _ request: FlotgMonitor,
+  func makeGetSourcesCall(
+    _ request: FlotgGetSourcesRequest,
     callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<FlotgMonitor, FlotgMonitor>
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetSourcesRequest, FLO_SOURCE>
 
   func makeGetMessagesCall(
     _ request: FlotgGetMessagesRequest,
@@ -188,27 +188,27 @@ extension FlotgServiceAsyncClientProtocol {
     return nil
   }
 
-  public func makeGetChatsCall(
-    _ request: FlotgGetChatsRequest,
+  public func makeReadyCall(
+    _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<FlotgGetChatsRequest, FlotgMonitor> {
-    return self.makeAsyncServerStreamingCall(
-      path: FlotgServiceClientMetadata.Methods.getChats.path,
+  ) -> GRPCAsyncUnaryCall<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty> {
+    return self.makeAsyncUnaryCall(
+      path: FlotgServiceClientMetadata.Methods.ready.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetChatsInterceptors() ?? []
+      interceptors: self.interceptors?.makeReadyInterceptors() ?? []
     )
   }
 
-  public func makeSetMonitoringCall(
-    _ request: FlotgMonitor,
+  public func makeGetSourcesCall(
+    _ request: FlotgGetSourcesRequest,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<FlotgMonitor, FlotgMonitor> {
-    return self.makeAsyncUnaryCall(
-      path: FlotgServiceClientMetadata.Methods.setMonitoring.path,
+  ) -> GRPCAsyncServerStreamingCall<FlotgGetSourcesRequest, FLO_SOURCE> {
+    return self.makeAsyncServerStreamingCall(
+      path: FlotgServiceClientMetadata.Methods.getSources.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeSetMonitoringInterceptors() ?? []
+      interceptors: self.interceptors?.makeGetSourcesInterceptors() ?? []
     )
   }
 
@@ -227,27 +227,27 @@ extension FlotgServiceAsyncClientProtocol {
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension FlotgServiceAsyncClientProtocol {
-  public func getChats(
-    _ request: FlotgGetChatsRequest,
+  public func ready(
+    _ request: SwiftProtobuf.Google_Protobuf_Empty,
     callOptions: CallOptions? = nil
-  ) -> GRPCAsyncResponseStream<FlotgMonitor> {
-    return self.performAsyncServerStreamingCall(
-      path: FlotgServiceClientMetadata.Methods.getChats.path,
+  ) async throws -> SwiftProtobuf.Google_Protobuf_Empty {
+    return try await self.performAsyncUnaryCall(
+      path: FlotgServiceClientMetadata.Methods.ready.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetChatsInterceptors() ?? []
+      interceptors: self.interceptors?.makeReadyInterceptors() ?? []
     )
   }
 
-  public func setMonitoring(
-    _ request: FlotgMonitor,
+  public func getSources(
+    _ request: FlotgGetSourcesRequest,
     callOptions: CallOptions? = nil
-  ) async throws -> FlotgMonitor {
-    return try await self.performAsyncUnaryCall(
-      path: FlotgServiceClientMetadata.Methods.setMonitoring.path,
+  ) -> GRPCAsyncResponseStream<FLO_SOURCE> {
+    return self.performAsyncServerStreamingCall(
+      path: FlotgServiceClientMetadata.Methods.getSources.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeSetMonitoringInterceptors() ?? []
+      interceptors: self.interceptors?.makeGetSourcesInterceptors() ?? []
     )
   }
 
@@ -283,11 +283,11 @@ public struct FlotgServiceAsyncClient: FlotgServiceAsyncClientProtocol {
 
 public protocol FlotgServiceClientInterceptorFactoryProtocol: Sendable {
 
-  /// - Returns: Interceptors to use when invoking 'getChats'.
-  func makeGetChatsInterceptors() -> [ClientInterceptor<FlotgGetChatsRequest, FlotgMonitor>]
+  /// - Returns: Interceptors to use when invoking 'ready'.
+  func makeReadyInterceptors() -> [ClientInterceptor<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty>]
 
-  /// - Returns: Interceptors to use when invoking 'setMonitoring'.
-  func makeSetMonitoringInterceptors() -> [ClientInterceptor<FlotgMonitor, FlotgMonitor>]
+  /// - Returns: Interceptors to use when invoking 'getSources'.
+  func makeGetSourcesInterceptors() -> [ClientInterceptor<FlotgGetSourcesRequest, FLO_SOURCE>]
 
   /// - Returns: Interceptors to use when invoking 'getMessages'.
   func makeGetMessagesInterceptors() -> [ClientInterceptor<FlotgGetMessagesRequest, FLO_MESSAGE>]
@@ -298,23 +298,23 @@ public enum FlotgServiceClientMetadata {
     name: "FlotgService",
     fullName: "FlotgService",
     methods: [
-      FlotgServiceClientMetadata.Methods.getChats,
-      FlotgServiceClientMetadata.Methods.setMonitoring,
+      FlotgServiceClientMetadata.Methods.ready,
+      FlotgServiceClientMetadata.Methods.getSources,
       FlotgServiceClientMetadata.Methods.getMessages,
     ]
   )
 
   public enum Methods {
-    public static let getChats = GRPCMethodDescriptor(
-      name: "GetChats",
-      path: "/FlotgService/GetChats",
-      type: GRPCCallType.serverStreaming
+    public static let ready = GRPCMethodDescriptor(
+      name: "Ready",
+      path: "/FlotgService/Ready",
+      type: GRPCCallType.unary
     )
 
-    public static let setMonitoring = GRPCMethodDescriptor(
-      name: "SetMonitoring",
-      path: "/FlotgService/SetMonitoring",
-      type: GRPCCallType.unary
+    public static let getSources = GRPCMethodDescriptor(
+      name: "GetSources",
+      path: "/FlotgService/GetSources",
+      type: GRPCCallType.serverStreaming
     )
 
     public static let getMessages = GRPCMethodDescriptor(
@@ -705,9 +705,9 @@ public enum FloRssServiceClientMetadata {
 public protocol FlotgServiceProvider: CallHandlerProvider {
   var interceptors: FlotgServiceServerInterceptorFactoryProtocol? { get }
 
-  func getChats(request: FlotgGetChatsRequest, context: StreamingResponseCallContext<FlotgMonitor>) -> EventLoopFuture<GRPCStatus>
+  func ready(request: SwiftProtobuf.Google_Protobuf_Empty, context: StatusOnlyCallContext) -> EventLoopFuture<SwiftProtobuf.Google_Protobuf_Empty>
 
-  func setMonitoring(request: FlotgMonitor, context: StatusOnlyCallContext) -> EventLoopFuture<FlotgMonitor>
+  func getSources(request: FlotgGetSourcesRequest, context: StreamingResponseCallContext<FLO_SOURCE>) -> EventLoopFuture<GRPCStatus>
 
   func getMessages(request: FlotgGetMessagesRequest, context: StreamingResponseCallContext<FLO_MESSAGE>) -> EventLoopFuture<GRPCStatus>
 }
@@ -724,22 +724,22 @@ extension FlotgServiceProvider {
     context: CallHandlerContext
   ) -> GRPCServerHandlerProtocol? {
     switch name {
-    case "GetChats":
-      return ServerStreamingServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgGetChatsRequest>(),
-        responseSerializer: ProtobufSerializer<FlotgMonitor>(),
-        interceptors: self.interceptors?.makeGetChatsInterceptors() ?? [],
-        userFunction: self.getChats(request:context:)
-      )
-
-    case "SetMonitoring":
+    case "Ready":
       return UnaryServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgMonitor>(),
-        responseSerializer: ProtobufSerializer<FlotgMonitor>(),
-        interceptors: self.interceptors?.makeSetMonitoringInterceptors() ?? [],
-        userFunction: self.setMonitoring(request:context:)
+        requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        interceptors: self.interceptors?.makeReadyInterceptors() ?? [],
+        userFunction: self.ready(request:context:)
+      )
+
+    case "GetSources":
+      return ServerStreamingServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<FlotgGetSourcesRequest>(),
+        responseSerializer: ProtobufSerializer<FLO_SOURCE>(),
+        interceptors: self.interceptors?.makeGetSourcesInterceptors() ?? [],
+        userFunction: self.getSources(request:context:)
       )
 
     case "GetMessages":
@@ -763,16 +763,16 @@ public protocol FlotgServiceAsyncProvider: CallHandlerProvider, Sendable {
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: FlotgServiceServerInterceptorFactoryProtocol? { get }
 
-  func getChats(
-    request: FlotgGetChatsRequest,
-    responseStream: GRPCAsyncResponseStreamWriter<FlotgMonitor>,
+  func ready(
+    request: SwiftProtobuf.Google_Protobuf_Empty,
+    context: GRPCAsyncServerCallContext
+  ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+  func getSources(
+    request: FlotgGetSourcesRequest,
+    responseStream: GRPCAsyncResponseStreamWriter<FLO_SOURCE>,
     context: GRPCAsyncServerCallContext
   ) async throws
-
-  func setMonitoring(
-    request: FlotgMonitor,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> FlotgMonitor
 
   func getMessages(
     request: FlotgGetMessagesRequest,
@@ -800,22 +800,22 @@ extension FlotgServiceAsyncProvider {
     context: CallHandlerContext
   ) -> GRPCServerHandlerProtocol? {
     switch name {
-    case "GetChats":
+    case "Ready":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgGetChatsRequest>(),
-        responseSerializer: ProtobufSerializer<FlotgMonitor>(),
-        interceptors: self.interceptors?.makeGetChatsInterceptors() ?? [],
-        wrapping: { try await self.getChats(request: $0, responseStream: $1, context: $2) }
+        requestDeserializer: ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        interceptors: self.interceptors?.makeReadyInterceptors() ?? [],
+        wrapping: { try await self.ready(request: $0, context: $1) }
       )
 
-    case "SetMonitoring":
+    case "GetSources":
       return GRPCAsyncServerHandler(
         context: context,
-        requestDeserializer: ProtobufDeserializer<FlotgMonitor>(),
-        responseSerializer: ProtobufSerializer<FlotgMonitor>(),
-        interceptors: self.interceptors?.makeSetMonitoringInterceptors() ?? [],
-        wrapping: { try await self.setMonitoring(request: $0, context: $1) }
+        requestDeserializer: ProtobufDeserializer<FlotgGetSourcesRequest>(),
+        responseSerializer: ProtobufSerializer<FLO_SOURCE>(),
+        interceptors: self.interceptors?.makeGetSourcesInterceptors() ?? [],
+        wrapping: { try await self.getSources(request: $0, responseStream: $1, context: $2) }
       )
 
     case "GetMessages":
@@ -835,13 +835,13 @@ extension FlotgServiceAsyncProvider {
 
 public protocol FlotgServiceServerInterceptorFactoryProtocol: Sendable {
 
-  /// - Returns: Interceptors to use when handling 'getChats'.
+  /// - Returns: Interceptors to use when handling 'ready'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetChatsInterceptors() -> [ServerInterceptor<FlotgGetChatsRequest, FlotgMonitor>]
+  func makeReadyInterceptors() -> [ServerInterceptor<SwiftProtobuf.Google_Protobuf_Empty, SwiftProtobuf.Google_Protobuf_Empty>]
 
-  /// - Returns: Interceptors to use when handling 'setMonitoring'.
+  /// - Returns: Interceptors to use when handling 'getSources'.
   ///   Defaults to calling `self.makeInterceptors()`.
-  func makeSetMonitoringInterceptors() -> [ServerInterceptor<FlotgMonitor, FlotgMonitor>]
+  func makeGetSourcesInterceptors() -> [ServerInterceptor<FlotgGetSourcesRequest, FLO_SOURCE>]
 
   /// - Returns: Interceptors to use when handling 'getMessages'.
   ///   Defaults to calling `self.makeInterceptors()`.
@@ -853,23 +853,23 @@ public enum FlotgServiceServerMetadata {
     name: "FlotgService",
     fullName: "FlotgService",
     methods: [
-      FlotgServiceServerMetadata.Methods.getChats,
-      FlotgServiceServerMetadata.Methods.setMonitoring,
+      FlotgServiceServerMetadata.Methods.ready,
+      FlotgServiceServerMetadata.Methods.getSources,
       FlotgServiceServerMetadata.Methods.getMessages,
     ]
   )
 
   public enum Methods {
-    public static let getChats = GRPCMethodDescriptor(
-      name: "GetChats",
-      path: "/FlotgService/GetChats",
-      type: GRPCCallType.serverStreaming
+    public static let ready = GRPCMethodDescriptor(
+      name: "Ready",
+      path: "/FlotgService/Ready",
+      type: GRPCCallType.unary
     )
 
-    public static let setMonitoring = GRPCMethodDescriptor(
-      name: "SetMonitoring",
-      path: "/FlotgService/SetMonitoring",
-      type: GRPCCallType.unary
+    public static let getSources = GRPCMethodDescriptor(
+      name: "GetSources",
+      path: "/FlotgService/GetSources",
+      type: GRPCCallType.serverStreaming
     )
 
     public static let getMessages = GRPCMethodDescriptor(

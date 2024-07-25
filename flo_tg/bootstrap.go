@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/go-faster/errors"
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
 const (
@@ -22,6 +24,7 @@ type Bootstrap struct {
 	TgWorkFolder  string
 	TgLogFileName string
 	ServicePort   int
+	Queue         *Queue
 }
 
 func (b *Bootstrap) Close() error {
@@ -29,26 +32,43 @@ func (b *Bootstrap) Close() error {
 }
 
 func BootstrapFromEnvironment() Bootstrap {
+
 	servicePort := GetenvInt("FLOTG_PORT", 0, false)
 
-	var logging Logger = &dummyLogging{}
-
 	graylogAddr := GetenvStr("GRAYLOG_ADDRESS", "", false)
-	LogErrorln("GraylogGELF TCP address:", graylogAddr)
 
+	// host name of current container (or system) is used for graylog message "source" field
 	selfHostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Cannot get os.Hostname()"))
 	}
 
-	logging = NewGraylogTCPLogger(Graylog_Facility, graylogAddr, selfHostname).SetAsDefault()
+	facility := Graylog_Facility
+	if prefix := GetenvStr("LOG_FACILITY_PREFIX", "", true); prefix != "" {
+		facility = prefix + "-" + facility
+	}
+
+	logger := NewGraylogTCPLogger(facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
+
+	logger.Message(gelf.LOG_DEBUG, "bootstrap", "BootstrapFromEnvironment", GetenvMap(
+		"LOG_FACILITY_PREFIX",
+		"GRAYLOG_ADDRESS",
+		"MONGO_URI",
+		"FLOTG_PORT",
+		"TG_PHONE",
+		"TG_APP_ID",
+		"TG_SESSION_PATH",
+	))
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
-	db := NewStorageMongo(mgUri, Mongo_Database)
+	db := NewStorageMongo(mgUri, Mongo_Database, logger)
 	if err := db.Ping(); err != nil {
-		err = errors.Wrapf(err, "connect to mongodb")
-		log.Fatal(err)
+		err = errors.Wrapf(err, "ping mongodb failed")
+		logger.Message(gelf.LOG_CRIT, "bootstrap", "Storage failed", map[string]any{
+			"err": err,
+		})
+		os.Exit(1)
 	}
 
 	phone := GetenvStr("TG_PHONE", "", false)
@@ -67,10 +87,10 @@ func BootstrapFromEnvironment() Bootstrap {
 
 	logFilePath := filepath.Join(sessionDir, "log.jsonl")
 
-	LogErrorf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath)
+	logger.Message(gelf.LOG_INFO, "bootstrap", fmt.Sprintf("Telegram database is in %s, logs in %s\n", sessionDir, logFilePath))
 
 	return Bootstrap{
-		Logger:        logging,
+		Logger:        logger,
 		Storage:       db,
 		TgPhone:       phone,
 		TgAppId:       appID,
@@ -78,5 +98,6 @@ func BootstrapFromEnvironment() Bootstrap {
 		TgWorkFolder:  sessionDir,
 		TgLogFileName: logFilePath,
 		ServicePort:   servicePort,
+		Queue:         NewQueue(200),
 	}
 }

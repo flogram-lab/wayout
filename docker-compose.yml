@@ -6,11 +6,12 @@ volumes:
   graylog_journal:
   telegram-session:
   wayout-cli-config:
+  tls-authority:
 
-networks:
-  default:
-  flogram-internal:
-    external: true
+# networks:
+#   default:
+#   flogram-internal:
+#     external: true
 
 services:
 
@@ -20,14 +21,13 @@ services:
     image: "mongo:7.0.6"
     volumes:
       - mongodb_data:/data/db
+    ports:
+      - 27017:27017/tcp
     restart: always
-    networks:
-      - default
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
@@ -57,13 +57,10 @@ services:
     volumes:
       - "graylog-datanode:/var/lib/graylog-datanode"
     restart: on-failure
-    networks:
-      - flogram-internal
-      - default
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   graylog:
@@ -101,12 +98,10 @@ services:
       - "graylog_data:/usr/share/graylog/data/data"
       - "graylog_journal:/usr/share/graylog/data/journal"
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   protoc-go:
@@ -133,7 +128,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   wayout-cli:
@@ -148,12 +143,10 @@ services:
     volumes:
       - wayout-cli-config:/var/lib/flogram/wayout.config
     restart: no
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
 
   flo_tg:
@@ -169,15 +162,41 @@ services:
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
       TG_SESSION_PATH: /var/run/telegram-session
+      TLS_AUTHORITY: /var/run/tls-authority
     volumes:
       - telegram-session:/var/run/telegram-session
+      - tls-authority:/var/run/tls-authority
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
+        max-file: "3"
+
+  flo_tg-local:
+    profiles:
+      - local
+    image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
+    build: flo_tg
+    network_mode: host
+    environment:
+      LOG_FACILITY_PREFIX: local
+      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
+      GRAYLOG_ADDRESS: "${GRAYLOG_ADDRESS:?Please set GRAYLOG_ADDRESS in the .env file}"
+      MONGO_URI: "${MONGO_URI:?Please set MONGO_URI in the .env file}"
+      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
+      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
+      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
+      TG_SESSION_PATH: /var/run/telegram-session
+      TLS_AUTHORITY: /var/run/tls-authority
+    volumes:
+      - telegram-session:/var/run/telegram-session
+      - ./tls-authority:/var/run/tls-authority
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1k"
         max-file: "3"
 
   flo_rss:
@@ -188,10 +207,8 @@ services:
       context: .
       dockerfile: flo_rss.Dockerfile
     restart: on-failure
-    networks:
-      - flogram-internal
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"

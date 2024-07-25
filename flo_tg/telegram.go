@@ -27,12 +27,15 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/time/rate"
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 	lj "gopkg.in/natefinch/lumberjack.v2"
 )
 
 func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error {
 
 	// Setting up logging to file with rotation.
+	//
+	// TODO: WTF? remove double logging in this
 	//
 	// Log to file, so we don't interfere with prompts and messages to user.
 	logWriter := zapcore.AddSync(&lj.Logger{
@@ -85,7 +88,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 	waiter := floodwait.NewWaiter().WithCallback(func(ctx context.Context, wait floodwait.FloodWait) {
 		// Notifying about flood wait.
 		lg.Warn("Flood wait", zap.Duration("wait", wait.Duration))
-		LogErrorln("Got FLOOD_WAIT. Will retry after", wait.Duration)
+		bootstrap.Logger.Message(gelf.LOG_WARNING, "telegram", fmt.Sprintf("Got FLOOD_WAIT. Will retry after %s", wait.Duration))
 	})
 
 	// Filling client options.
@@ -121,10 +124,13 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			}
 
 			name := self.FirstName
-			if self.Username != "" {
-				name = fmt.Sprintf("%s (@%s)", name, self.Username)
+			if self.LastName != "" {
+				name = fmt.Sprintf("%s, %s", name, self.LastName)
 			}
-			LogErrorf("Current user: %s [ID %d]\n", name, self.ID)
+			if self.Username != "" {
+				name = fmt.Sprintf("%s, @%s", name, self.Username)
+			}
+			bootstrap.Logger.Message(gelf.LOG_INFO, "telegram", fmt.Sprintf("Current user: %s, %d\n", name, self.ID))
 
 			lg.Info("Login",
 				zap.String("first_name", self.FirstName),
@@ -134,15 +140,14 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			)
 
 			handling := newTelegramHandling(bootstrap, peerDB, self)
-
-			handling.AddHandlers(dispatcher)
+			handling.Attach(dispatcher)
 
 			// Waiting until context is done.
-			LogErrorln("Listening for updates. Interrupt (Ctrl+C) to stop.")
+			bootstrap.Logger.Message(gelf.LOG_DEBUG, "telegram", "Listening for updates. Interrupt (Ctrl+C) to stop.")
 			return updatesRecovery.Run(ctx, api, self.ID, updates.AuthOptions{
 				IsBot: self.Bot,
 				OnStart: func(ctx context.Context) {
-					LogErrorln("Update recovery initialized and started, listening for events")
+					handling.bootstrap.Logger.Message(gelf.LOG_INFO, "telegram", "Update recovery initialized and started, listening for events")
 				},
 			})
 		}); err != nil {

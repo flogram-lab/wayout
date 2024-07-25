@@ -23,8 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FlotgServiceClient interface {
-	GetChats(ctx context.Context, in *FlotgGetChatsRequest, opts ...grpc.CallOption) (FlotgService_GetChatsClient, error)
-	SetMonitoring(ctx context.Context, in *FlotgMonitor, opts ...grpc.CallOption) (*FlotgMonitor, error)
+	Ready(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetSources(ctx context.Context, in *FlotgGetSourcesRequest, opts ...grpc.CallOption) (FlotgService_GetSourcesClient, error)
 	GetMessages(ctx context.Context, in *FlotgGetMessagesRequest, opts ...grpc.CallOption) (FlotgService_GetMessagesClient, error)
 }
 
@@ -36,12 +36,21 @@ func NewFlotgServiceClient(cc grpc.ClientConnInterface) FlotgServiceClient {
 	return &flotgServiceClient{cc}
 }
 
-func (c *flotgServiceClient) GetChats(ctx context.Context, in *FlotgGetChatsRequest, opts ...grpc.CallOption) (FlotgService_GetChatsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &FlotgService_ServiceDesc.Streams[0], "/FlotgService/GetChats", opts...)
+func (c *flotgServiceClient) Ready(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/FlotgService/Ready", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &flotgServiceGetChatsClient{stream}
+	return out, nil
+}
+
+func (c *flotgServiceClient) GetSources(ctx context.Context, in *FlotgGetSourcesRequest, opts ...grpc.CallOption) (FlotgService_GetSourcesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &FlotgService_ServiceDesc.Streams[0], "/FlotgService/GetSources", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &flotgServiceGetSourcesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -51,30 +60,21 @@ func (c *flotgServiceClient) GetChats(ctx context.Context, in *FlotgGetChatsRequ
 	return x, nil
 }
 
-type FlotgService_GetChatsClient interface {
-	Recv() (*FlotgMonitor, error)
+type FlotgService_GetSourcesClient interface {
+	Recv() (*FLO_SOURCE, error)
 	grpc.ClientStream
 }
 
-type flotgServiceGetChatsClient struct {
+type flotgServiceGetSourcesClient struct {
 	grpc.ClientStream
 }
 
-func (x *flotgServiceGetChatsClient) Recv() (*FlotgMonitor, error) {
-	m := new(FlotgMonitor)
+func (x *flotgServiceGetSourcesClient) Recv() (*FLO_SOURCE, error) {
+	m := new(FLO_SOURCE)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
-}
-
-func (c *flotgServiceClient) SetMonitoring(ctx context.Context, in *FlotgMonitor, opts ...grpc.CallOption) (*FlotgMonitor, error) {
-	out := new(FlotgMonitor)
-	err := c.cc.Invoke(ctx, "/FlotgService/SetMonitoring", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *flotgServiceClient) GetMessages(ctx context.Context, in *FlotgGetMessagesRequest, opts ...grpc.CallOption) (FlotgService_GetMessagesClient, error) {
@@ -113,8 +113,8 @@ func (x *flotgServiceGetMessagesClient) Recv() (*FLO_MESSAGE, error) {
 // All implementations must embed UnimplementedFlotgServiceServer
 // for forward compatibility
 type FlotgServiceServer interface {
-	GetChats(*FlotgGetChatsRequest, FlotgService_GetChatsServer) error
-	SetMonitoring(context.Context, *FlotgMonitor) (*FlotgMonitor, error)
+	Ready(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	GetSources(*FlotgGetSourcesRequest, FlotgService_GetSourcesServer) error
 	GetMessages(*FlotgGetMessagesRequest, FlotgService_GetMessagesServer) error
 	mustEmbedUnimplementedFlotgServiceServer()
 }
@@ -123,11 +123,11 @@ type FlotgServiceServer interface {
 type UnimplementedFlotgServiceServer struct {
 }
 
-func (UnimplementedFlotgServiceServer) GetChats(*FlotgGetChatsRequest, FlotgService_GetChatsServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetChats not implemented")
+func (UnimplementedFlotgServiceServer) Ready(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ready not implemented")
 }
-func (UnimplementedFlotgServiceServer) SetMonitoring(context.Context, *FlotgMonitor) (*FlotgMonitor, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetMonitoring not implemented")
+func (UnimplementedFlotgServiceServer) GetSources(*FlotgGetSourcesRequest, FlotgService_GetSourcesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetSources not implemented")
 }
 func (UnimplementedFlotgServiceServer) GetMessages(*FlotgGetMessagesRequest, FlotgService_GetMessagesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
@@ -145,43 +145,43 @@ func RegisterFlotgServiceServer(s grpc.ServiceRegistrar, srv FlotgServiceServer)
 	s.RegisterService(&FlotgService_ServiceDesc, srv)
 }
 
-func _FlotgService_GetChats_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(FlotgGetChatsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(FlotgServiceServer).GetChats(m, &flotgServiceGetChatsServer{stream})
-}
-
-type FlotgService_GetChatsServer interface {
-	Send(*FlotgMonitor) error
-	grpc.ServerStream
-}
-
-type flotgServiceGetChatsServer struct {
-	grpc.ServerStream
-}
-
-func (x *flotgServiceGetChatsServer) Send(m *FlotgMonitor) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _FlotgService_SetMonitoring_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FlotgMonitor)
+func _FlotgService_Ready_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FlotgServiceServer).SetMonitoring(ctx, in)
+		return srv.(FlotgServiceServer).Ready(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/FlotgService/SetMonitoring",
+		FullMethod: "/FlotgService/Ready",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FlotgServiceServer).SetMonitoring(ctx, req.(*FlotgMonitor))
+		return srv.(FlotgServiceServer).Ready(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _FlotgService_GetSources_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FlotgGetSourcesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FlotgServiceServer).GetSources(m, &flotgServiceGetSourcesServer{stream})
+}
+
+type FlotgService_GetSourcesServer interface {
+	Send(*FLO_SOURCE) error
+	grpc.ServerStream
+}
+
+type flotgServiceGetSourcesServer struct {
+	grpc.ServerStream
+}
+
+func (x *flotgServiceGetSourcesServer) Send(m *FLO_SOURCE) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _FlotgService_GetMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -213,14 +213,14 @@ var FlotgService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FlotgServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SetMonitoring",
-			Handler:    _FlotgService_SetMonitoring_Handler,
+			MethodName: "Ready",
+			Handler:    _FlotgService_Ready_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetChats",
-			Handler:       _FlotgService_GetChats_Handler,
+			StreamName:    "GetSources",
+			Handler:       _FlotgService_GetSources_Handler,
 			ServerStreams: true,
 		},
 		{

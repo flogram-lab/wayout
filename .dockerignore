@@ -7,3 +7,4 @@ Dockerfile
 .build
 .DS_Store
 .bak
+/tls-authority/*.pem

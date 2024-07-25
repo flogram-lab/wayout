@@ -8,13 +8,16 @@ volumes:
 services:
 
   wayout-lib-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.swift.Dockerfile
+    environment:
+      LOG_FACILITY_PREFIX: debug
     volumes:
       - ./wayout-lib:/root/wayout-lib
-    networks:
-      - flogram-internal
+      # using remote paths:
+      #- /remote/workspace/wayout-lib:/root/wayout-lib
     logging:
       driver: "json-file"
       options:
@@ -22,16 +25,19 @@ services:
         max-file: "3"
 
   flo_rss-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.swift.Dockerfile
     environment:
       WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
+      LOG_FACILITY_PREFIX: debug
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
-    networks:
-      - flogram-internal
+      # using remote paths:
+      #- ./flo_rss:/root/flo_rss
+      #- ./wayout-lib:/root/wayout-lib
     logging:
       driver: "json-file"
       options:
@@ -39,29 +45,33 @@ services:
         max-file: "3"
 
   flo_tg-devcontainer:
+    network_mode: host
     build: 
       context: .
       dockerfile: devcontainer.go.Dockerfile
     env_file: .env
     environment:
+      LOG_FACILITY_PREFIX: debug
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
-      GRAYLOG_ADDRESS: graylog:12201
-      MONGO_URI: mongodb://mongodb:27017
+      GRAYLOG_ADDRESS: "${GRAYLOG_ADDRESS:?Please set GRAYLOG_ADDRESS in the .env file}"
+      MONGO_URI: "${MONGO_URI:?Please set MONGO_URI in the .env file}"
       TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
       TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
       TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
       TG_SESSION_PATH: /var/run/telegram-session
       GOCACHE: /go/cache
       GOPATH: /go
+      TLS_AUTHORITY: /root/tls-authority
     volumes:
       - telegram-session:/var/run/telegram-session
-      - ./flo_tg:/root/flo_tg
       - gopkg:/go/pkg
       - gocache:/go/cache
-    networks:
-      - flogram-internal
+      - ./flo_tg:/root/flo_tg
+      - ./tls-authority:/root/tls-authority
+      # using remote paths:
+      #- ./flo_tg:/root/flo_tg
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-size: "1k"
         max-file: "3"
