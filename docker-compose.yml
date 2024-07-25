@@ -149,30 +149,6 @@ services:
         max-size: "1k"
         max-file: "3"
 
-  flo_tg:
-    profiles:
-      - main
-    image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
-    build: flo_tg
-    environment:
-      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
-      GRAYLOG_ADDRESS: graylog:12201
-      MONGO_URI: mongodb://mongodb:27017
-      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
-      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
-      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
-      TG_SESSION_PATH: /var/run/telegram-session
-      TLS_AUTHORITY: /var/run/tls-authority
-    volumes:
-      - telegram-session:/var/run/telegram-session
-      - tls-authority:/var/run/tls-authority
-    restart: on-failure
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "1k"
-        max-file: "3"
-
   flo_tg-local:
     profiles:
       - local
@@ -199,9 +175,34 @@ services:
         max-size: "1k"
         max-file: "3"
 
-  flo_rss:
+  flo_tg:
     profiles:
       - main
+    image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
+    build: flo_tg
+    environment:
+      LOG_FACILITY_PREFIX: ""
+      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
+      GRAYLOG_ADDRESS: graylog:12201
+      MONGO_URI: mongodb://mongodb:27017
+      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
+      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
+      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
+      TG_SESSION_PATH: /var/run/telegram-session
+      TLS_AUTHORITY: /var/run/tls-authority
+    volumes:
+      - telegram-session:/var/run/telegram-session
+      - tls-authority:/var/run/tls-authority
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1k"
+        max-file: "3"
+
+  flo_rss:
+    profiles:
+      - todo
     image: ghcr.io/flogram-lab/wayout-flo_rss:1.0
     build:
       context: .
