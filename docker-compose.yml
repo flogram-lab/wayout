@@ -173,6 +173,32 @@ services:
         max-size: "1k"
         max-file: "3"
 
+  flo_tg-local:
+    profiles:
+      - local
+    image: ghcr.io/flogram-lab/wayout-flo_tg:1.0
+    build: flo_tg
+    network_mode: host
+    environment:
+      LOG_FACILITY_PREFIX: local
+      FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
+      GRAYLOG_ADDRESS: "${GRAYLOG_ADDRESS:?Please set GRAYLOG_ADDRESS in the .env file}"
+      MONGO_URI: "${MONGO_URI:?Please set MONGO_URI in the .env file}"
+      TG_PHONE: "${TG_PHONE:?Please set TG_PHONE in the .env file}"
+      TG_APP_ID: "${TG_APP_ID:?Please set TG_APP_ID in the .env file}"
+      TG_APP_HASH: "${TG_APP_HASH:?Please set TG_APP_HASH in the .env file}"
+      TG_SESSION_PATH: /var/run/telegram-session
+      TLS_AUTHORITY: /var/run/tls-authority
+    volumes:
+      - telegram-session:/var/run/telegram-session
+      - ./tls-authority:/var/run/tls-authority
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1k"
+        max-file: "3"
+
   flo_rss:
     profiles:
       - main

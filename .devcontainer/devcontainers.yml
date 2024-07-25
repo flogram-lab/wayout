@@ -12,6 +12,8 @@ services:
     build: 
       context: .
       dockerfile: devcontainer.swift.Dockerfile
+    environment:
+      LOG_FACILITY_PREFIX: debug
     volumes:
       - ./wayout-lib:/root/wayout-lib
       # using remote paths:
@@ -29,6 +31,7 @@ services:
       dockerfile: devcontainer.swift.Dockerfile
     environment:
       WAYOUT_CLI_CONF_DIR: ~/.wayout-cli
+      LOG_FACILITY_PREFIX: debug
     volumes:
       - ./flo_rss:/root/flo_rss
       - ./wayout-lib:/root/wayout-lib
@@ -48,6 +51,7 @@ services:
       dockerfile: devcontainer.go.Dockerfile
     env_file: .env
     environment:
+      LOG_FACILITY_PREFIX: debug
       FLOTG_PORT: "${FLOTG_PORT:?Please set FLOTG_PORT in the .env file}"
       GRAYLOG_ADDRESS: "${GRAYLOG_ADDRESS:?Please set GRAYLOG_ADDRESS in the .env file}"
       MONGO_URI: "${MONGO_URI:?Please set MONGO_URI in the .env file}"
