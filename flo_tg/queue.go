@@ -85,14 +85,17 @@ func (q *Queue) EnqueueAndWait(op Op) {
 	<-c
 }
 
-// Enqueue operation and wait before it is done.
-// This function may block for unlimited time.
-// Starting operation is aborted if queue waiting time was longer than the startTimeout
-func (q *Queue) EnqueueAndWaitTimeout(startTimeout time.Duration, op Op) bool {
+// Enqueue operation and wait before it is done (blocking) in order
+// Cancelled if queue waiting time was longer than the startTimeout
+// Cancelled if context is cancelled
+// Returns false only on startTimeout or if context was cancelled before enqueued.
+func (q *Queue) Join(ctx context.Context, startTimeout time.Duration, op Op) bool {
 	c := make(chan bool)
 	defer close(c)
 
 	started := time.Now()
+
+	// TODO: add select, ctx cancellation detected, and timeout using Ticker.
 
 	q.op <- func(ctx context.Context) {
 		if time.Since(started) >= startTimeout {

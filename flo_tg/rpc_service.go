@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"path"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -171,7 +172,18 @@ func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stre
 		logger:  logger,
 	}
 
-	result, err := read.Sources(stream.Context(), request.SourceUids...)
+	var result []storedSource
+	var err error
+
+	op := func(ctx context.Context) {
+		result, err = read.Sources(ctx, request.SourceUids...)
+	}
+
+	if !service.bootstrap.Queue.Join(stream.Context(), time.Second*5, op) {
+		logger.Message(gelf.LOG_WARNING, "rpc_service", "Queue join did not run", logInfo)
+		return errors.New("queue is busy, try again")
+	}
+
 	if err != nil {
 		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Sources fail", logInfo, map[string]any{
 			"err":               err,
@@ -222,7 +234,18 @@ func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, st
 		logger:  logger,
 	}
 
-	result, err := read.Messages(stream.Context(), request.SourceUid)
+	var result []storedMessage
+	var err error
+
+	op := func(ctx context.Context) {
+		result, err = read.Messages(stream.Context(), request.SourceUid)
+	}
+
+	if !service.bootstrap.Queue.Join(stream.Context(), time.Second*5, op) {
+		logger.Message(gelf.LOG_WARNING, "rpc_service", "Queue join did not run", logInfo)
+		return errors.New("queue is busy, try again")
+	}
+
 	if err != nil {
 		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Messages fail", logInfo, map[string]any{
 			"err":               err,
