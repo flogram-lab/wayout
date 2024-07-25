@@ -35,7 +35,8 @@ type Logger interface {
 	io.Writer
 	Close() error
 	Message(level int32, kind string, message string, extras ...map[string]any) bool
-	AddRequestID(requestUid string) Logger
+	AddRequestID(requestUid string, fields ...map[string]any) Logger
+	SetField(key string, value any)
 	CopyToStderr() Logger
 	SetAsDefault() Logger
 }
@@ -46,9 +47,10 @@ type dummyLogging struct {
 
 type gelfLogger struct {
 	Logger
-	writer                         gelf.Writer
-	facility, hostname, requestUid string
-	stderr                         bool
+	writer             gelf.Writer
+	facility, hostname string
+	fields             map[string]any
+	stderr             bool
 }
 
 func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
@@ -61,11 +63,11 @@ func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
 	gelfWriter.Facility = facility
 
 	logger := &gelfLogger{
-		writer:     gelfWriter,
-		facility:   facility,
-		hostname:   selfHostname,
-		stderr:     false,
-		requestUid: "",
+		writer:   gelfWriter,
+		facility: facility,
+		hostname: selfHostname,
+		stderr:   false,
+		fields:   map[string]any{},
 	}
 
 	log.Printf("Logging to stdout & graylog @%s", graylogAddr)
@@ -87,8 +89,11 @@ func (dummyLogging) Message(level int32, kind string, message string, extras ...
 	return true
 }
 
-func (dummy dummyLogging) AddRequestID(string) Logger {
+func (dummy dummyLogging) AddRequestID(string, ...map[string]any) Logger {
 	return dummy
+}
+
+func (dummy dummyLogging) SetField(string, any) {
 }
 
 func (dummy dummyLogging) Write(p []byte) (int, error) {
@@ -104,45 +109,53 @@ func (dummy dummyLogging) CopyToStderr() Logger {
 }
 
 func (logger *gelfLogger) Close() error {
-	if logger.requestUid != "" {
-		log.Println("WARN not setting request uid for l since it is already set", logger.requestUid)
-		return nil
-	}
-
 	return logger.writer.Close()
 }
 
-func (logger *gelfLogger) AddRequestID(requestUid string) Logger {
-	if logger.requestUid != "" {
-		requestUid = logger.requestUid + "/" + requestUid
+func (logger *gelfLogger) AddRequestID(requestUid string, fields ...map[string]any) Logger {
+	if oldId, ok := logger.fields["request_uid"]; ok {
+		requestUid = oldId.(string) + "/" + requestUid
 	}
 
+	cloneFields := map[string]any{}
+	mergo.MergeWithOverwrite(cloneFields, logger.fields)
+
+	for _, v := range fields {
+		mergo.MergeWithOverwrite(cloneFields, v)
+	}
+
+	logger.fields["request_uid"] = requestUid
+
 	return &gelfLogger{
-		writer:     logger.writer,
-		facility:   logger.facility,
-		hostname:   logger.hostname,
-		stderr:     logger.stderr,
-		requestUid: requestUid,
+		writer:   logger.writer,
+		facility: logger.facility,
+		hostname: logger.hostname,
+		stderr:   logger.stderr,
+		fields:   cloneFields,
 	}
 }
 
-func (logger *gelfLogger) Message(level int32, kind string, message string, extras ...map[string]any) bool {
+func (logger *gelfLogger) SetField(key string, value any) {
+	logger.fields[key] = value
+}
+
+func (logger *gelfLogger) Message(level int32, kind string, message string, fields ...map[string]any) bool {
 
 	allExtras := map[string]any{}
 
-	for _, ex := range extras {
-		mergo.Merge(&allExtras, ex)
+	mergo.MergeWithOverwrite(&allExtras, logger.fields)
+
+	for _, ex := range fields {
+		mergo.MergeWithOverwrite(&allExtras, ex)
 	}
 
 	stdErrMessage := fmt.Sprintf("%s: %s\n", kind, message)
 
-	if logger.requestUid != "" {
-		allExtras["request_uid"] = logger.requestUid
-
-		stdErrMessage = fmt.Sprintf("[%s] %s", logger.requestUid, stdErrMessage)
+	if logger.fields["request_uid"] != "" {
+		stdErrMessage = fmt.Sprintf("[%s] %s", logger.fields["request_uid"], stdErrMessage)
 	}
 
-	if logger.stderr {
+	if logger.stderr || level <= gelf.LOG_ERR {
 		os.Stderr.WriteString(stdErrMessage)
 	}
 
@@ -163,7 +176,7 @@ func (logger *gelfLogger) Message(level int32, kind string, message string, extr
 	}
 
 	log.Println("ERROR WriteMessage GELF in GelfWriterLogging.Message:", err.Error())
-	if data, err := json.MarshalIndent(extras, "", "    "); err != nil {
+	if data, err := json.MarshalIndent(fields, "", "    "); err != nil {
 		log.Println("WARN log not sent", err)
 	} else {
 		log.Println("WARN log not sent", string(data))

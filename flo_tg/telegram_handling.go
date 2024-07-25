@@ -33,7 +33,7 @@ func (handling *telegramHandling) Attach(dispatcher tg.UpdateDispatcher) {
 	dispatcher.OnNewChannelMessage(handling.handlerChannelMessage())
 }
 
-func (handling *telegramHandling) requestFromMessage(handler string, logInfo map[string]any, msg tg.MessageClass) (Logger, error) {
+func (handling *telegramHandling) requestFromMessage(logInfo map[string]any, msg tg.MessageClass) (Logger, error) {
 	logger := handling.bootstrap.Logger
 
 	if msg == nil {
@@ -58,7 +58,14 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 			"debug_td_update_type": reflect.TypeOf(u).String(),
 		}
 
-		logger, err := handling.requestFromMessage(handler, logInfo, u.Message)
+		var (
+			err    error
+			logger Logger = handling.bootstrap.Logger
+		)
+
+		defer LogPanicErr(&err, logger, "telegram_handling", handler)
+
+		logger, err = handling.requestFromMessage(logInfo, u.Message)
 		if err != nil {
 			return err
 		}
@@ -67,6 +74,11 @@ func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 
 		case *tg.Message:
 			logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handling (message) as genericHandleMessage", logInfo)
+
+			// if msg.Message == "crash!" {
+			// 	panic("testing panic 2")
+			// }
+
 			handling.bootstrap.Queue.Enqueue(func(ctx context.Context) {
 				handling.genericHandleMessage(handler, ctx, e, msg, logger)
 			})
@@ -93,7 +105,14 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 			"debug_td_update_type": reflect.TypeOf(u).String(),
 		}
 
-		logger, err := handling.requestFromMessage(handler, logInfo, u.Message)
+		var (
+			err    error
+			logger Logger = handling.bootstrap.Logger
+		)
+
+		defer LogPanicErr(&err, logger, "telegram_handling", handler)
+
+		logger, err = handling.requestFromMessage(logInfo, u.Message)
 		if err != nil {
 			return err
 		}

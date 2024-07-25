@@ -52,12 +52,15 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 	lg := zap.New(logCore)
 	defer func() { _ = lg.Sync() }()
 
+	var err error
+	var db *pebbledb.DB
+
 	// So, we are storing session information in current directory, under subdirectory "session/phone_hash"
 	sessionStorage := &telegram.FileSessionStorage{
 		Path: filepath.Join(bootstrap.TgWorkFolder, "session.json"),
 	}
 	// Peer storage, for resolve caching and short updates handling.
-	db, err := pebbledb.Open(filepath.Join(bootstrap.TgWorkFolder, "peers.pebble.db"), &pebbledb.Options{})
+	db, err = pebbledb.Open(filepath.Join(bootstrap.TgWorkFolder, "peers.pebble.db"), &pebbledb.Options{})
 	if err != nil {
 		return errors.Wrap(err, "create pebble storage")
 	}
@@ -110,8 +113,16 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 	flow := auth.NewFlow(examples.Terminal{PhoneNumber: bootstrap.TgPhone}, auth.SendCodeOptions{})
 
 	return waiter.Run(ctx, func(ctx context.Context) error {
+
+		// Install panic handler with logging on this thread/goroutine
+		defer LogPanicErr(&err, bootstrap.Logger, "telegram", "waiter.Run")
+
 		// Spawning main goroutine.
-		if err := client.Run(ctx, func(ctx context.Context) error {
+		if err = client.Run(ctx, func(ctx context.Context) error {
+
+			// Install panic handler with logging on this thread/goroutine
+			defer LogPanicErr(&err, bootstrap.Logger, "telegram", "client.Run")
+
 			// Perform auth if no session is available.
 			if err := client.Auth().IfNecessary(ctx, flow); err != nil {
 				return errors.Wrap(err, "auth")
@@ -144,6 +155,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 
 			// Waiting until context is done.
 			bootstrap.Logger.Message(gelf.LOG_DEBUG, "telegram", "Listening for updates. Interrupt (Ctrl+C) to stop.")
+
 			return updatesRecovery.Run(ctx, api, self.ID, updates.AuthOptions{
 				IsBot: self.Bot,
 				OnStart: func(ctx context.Context) {
@@ -153,6 +165,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 		}); err != nil {
 			return errors.Wrap(err, "run")
 		}
-		return nil
+		
+		return err
 	})
 }

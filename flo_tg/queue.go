@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
 // Context passed to the operation func will tell it is cancelled if queue is stopping
@@ -13,6 +16,8 @@ type Op func(context.Context)
 // RPC request handlers and telegram message handlers both end up in a shared queue of operations.
 // A minimum level of consistency is then guaranteed.
 type Queue struct {
+	name   string
+	logger Logger
 	ctx    context.Context
 	cancel context.CancelFunc
 	op     chan Op
@@ -21,15 +26,19 @@ type Queue struct {
 // Makes new Queue (unintialized)
 // Without Initialize, Enqueue takes up to to [backlog] operations before blocked.
 // [backlog] defines number of operations pre-scheduled (pending) in queue, a non-zero value will lead to losing some if queue is Stopped
-func NewQueue(backlog int) *Queue {
+func NewQueue(name string, logger Logger, backlog int) *Queue {
 	return &Queue{
-		op: make(chan Op, backlog),
+		name:   name,
+		logger: logger,
+		op:     make(chan Op, backlog),
 	}
 }
 
 // Create queue context (cancellable) for Run() goroutine
 // Initializing queue must be followed by spawning Run() goroutine.
 func (q *Queue) Initialize(ctx context.Context) {
+	q.logger.Message(gelf.LOG_DEBUG, "queue", fmt.Sprintf("%s Queue::Initialize", q.name))
+
 	q.ctx, q.cancel = context.WithCancel(ctx)
 }
 
@@ -44,6 +53,7 @@ func (q *Queue) IsReady() bool {
 // Context passed to the operation func will tell it is cancelled if queue is stopping
 // TODO: block before Run() is exited?
 func (q *Queue) Stop() {
+	q.logger.Message(gelf.LOG_DEBUG, "queue", fmt.Sprintf("%s Queue::Stop", q.name))
 	q.cancel()
 	close(q.op)
 	q.ctx = nil
@@ -52,12 +62,20 @@ func (q *Queue) Stop() {
 
 // Goroutine that performs all future operations in order.
 func (q *Queue) Run() {
+	q.logger.Message(gelf.LOG_DEBUG, "queue", fmt.Sprintf("%s Queue::Run", q.name))
+
+	defer q.logger.Message(gelf.LOG_WARNING, "queue", fmt.Sprintf("%s Queue::Run end", q.name))
+
 	for {
 		select {
 		case op := <-q.op:
 			if op == nil { // normally channel termination
 				return
 			}
+
+			// Install panic handler with logging on this thread/goroutine
+			defer LogPanic(q.logger, "queue")
+
 			op(q.ctx)
 		case <-q.ctx.Done():
 			return

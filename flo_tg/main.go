@@ -17,9 +17,13 @@ func main() {
 	defer cancel()
 
 	bootstrap := BootstrapFromEnvironment()
+
 	defer bootstrap.Close()
 
 	bootstrap.Logger.Message(gelf.LOG_INFO, "main", "Bootstrap OK, following launch sequence")
+
+	// Install panic handler with logging on this thread/goroutine.
+	defer LogPanic(bootstrap.Logger, "main")
 
 	// BEGIN rpc_service
 

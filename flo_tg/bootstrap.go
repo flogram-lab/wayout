@@ -48,17 +48,11 @@ func BootstrapFromEnvironment() Bootstrap {
 		facility = prefix + "-" + facility
 	}
 
-	logger := NewGraylogTCPLogger(facility, graylogAddr, selfHostname).SetAsDefault().CopyToStderr()
+	logger := NewGraylogTCPLogger(facility, graylogAddr, selfHostname).SetAsDefault()
 
-	logger.Message(gelf.LOG_DEBUG, "bootstrap", "BootstrapFromEnvironment", GetenvMap(
-		"LOG_FACILITY_PREFIX",
-		"GRAYLOG_ADDRESS",
-		"MONGO_URI",
-		"FLOTG_PORT",
-		"TG_PHONE",
-		"TG_APP_ID",
-		"TG_SESSION_PATH",
-	))
+	logger.Message(gelf.LOG_DEBUG, "bootstrap", "BootstrapFromEnvironment", map[string]any{
+		"environ": os.Environ(),
+	})
 
 	mgUri := GetenvStr("MONGO_URI", "mongodb://localhost:27017", true)
 
@@ -98,6 +92,6 @@ func BootstrapFromEnvironment() Bootstrap {
 		TgWorkFolder:  sessionDir,
 		TgLogFileName: logFilePath,
 		ServicePort:   servicePort,
-		Queue:         NewQueue(200),
+		Queue:         NewQueue("data operations", logger, 200),
 	}
 }

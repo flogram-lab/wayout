@@ -12,7 +12,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
@@ -111,8 +110,11 @@ func (service *rpcService) Init() error {
 }
 
 func (service *rpcService) Serve() {
+	// Install panic handler with logging on this thread/goroutine
+	defer LogPanic(service.bootstrap.Logger, "rpc_service")
 
 	service.bootstrap.Logger.Message(gelf.LOG_INFO, "rpc_service", fmt.Sprintf("Running Serve(), listener at %s", service.listener.Addr().String()))
+
 	err := service.server.Serve(service.listener)
 
 	if errors.Is(err, context.Canceled) {
@@ -136,142 +138,100 @@ func (service *rpcService) Serve() {
 }
 
 func (service rpcService) Ready(ctx context.Context, request *emptypb.Empty) (*emptypb.Empty, error) {
-	defer ctx.Done()
-
-	// TODO: check if queue is initialized and healthy, and telegram client is still running.
-	if !service.bootstrap.Queue.IsReady() {
-		return &emptypb.Empty{}, errors.New("not ready: queue")
-	}
-
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, service.methodCallWrapper("Ready", ctx, request, func(call rpcCall) error {
+		// TODO: check telegram client is still running and healthy?
+		if !service.bootstrap.Queue.IsReady() {
+			return errors.New("not ready: queue")
+		}
+		// panic("testing panic 1")
+		return nil
+	})
 }
 
 func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stream proto.FlotgService_GetSourcesServer) error {
-	defer stream.Context().Done()
+	return service.methodCallWrapper("GetSources", stream.Context(), request, func(call rpcCall) error {
+		var (
+			err    error
+			result []storedSource
+		)
 
-	const method = "GetSources"
+		op := func(ctx context.Context) {
+			read := storageRead{
+				storage: service.bootstrap.Storage,
+				logger:  call.logger,
+			}
 
-	peerAddress := ""
-	if peer, ok := peer.FromContext(stream.Context()); ok {
-		peerAddress = peer.Addr.String()
-	}
+			// TODO: request flags check
+			// FIXME: filter flags
 
-	logInfo := map[string]any{
-		"debug_rpc_request": service.converter.encodeToJson(request, false),
-		"peer_addr":         peerAddress,
-		"service":           "flo_tg",
-		"method":            method,
-	}
-
-	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
-	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
-
-	var result []storedSource
-	var err error
-
-	// TODO: request flags check
-	// FIXME: filter flags
-
-	op := func(ctx context.Context) {
-		read := storageRead{
-			storage: service.bootstrap.Storage,
-			logger:  logger,
+			result, err = read.Sources(ctx, request.SourceUids...)
 		}
 
-		result, err = read.Sources(ctx, request.SourceUids...)
-	}
+		count := 0
 
-	if !service.bootstrap.Queue.Join(stream.Context(), time.Second*5, op) {
-		logger.Message(gelf.LOG_WARNING, "rpc_service", "Queue join did not run", logInfo)
-		return errors.New("queue is busy, try again")
-	}
-
-	if err != nil {
-		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Sources fail", logInfo, map[string]any{
-			"err":               err,
-			"debug_rpc_request": service.converter.encodeToJson(request, false),
-		})
-		if result == nil {
-			return errors.New("storage read operation failed on backend")
+		if !service.bootstrap.Queue.Join(call.ctx, time.Second*5, op) {
+			return errors.New("queue join failed (overload?)")
+		} else if err != nil {
+			return errors.Wrap(err, "storage_read failed")
+		} else if result == nil {
+			return errors.New("storage read operation failed on backend (result is nil)")
 		}
-	}
 
-	for i := range result {
-		err := stream.Send(result[i].Source)
-		if err != nil {
-			logger.Message(gelf.LOG_ERR, "rpc_service", "gRPC Stream.Send() fail", logInfo, map[string]any{
-				"err": err,
-			})
-			return errors.New("streaming failed on backend")
+		for i := range result {
+			err := stream.Send(result[i].Source)
+			if err != nil {
+				return errors.Wrap(err, "gRPC Stream.Send() fail")
+			} else {
+				count++
+			}
 		}
-	}
 
-	logger.Message(gelf.LOG_DEBUG, "rpc_service", "Request "+method+" completed", logInfo)
+		call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
 
-	return nil
+		return nil
+	})
 }
 
 func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, stream proto.FlotgService_GetMessagesServer) error {
-	defer stream.Context().Done()
+	return service.methodCallWrapper("GetMessages", stream.Context(), request, func(call rpcCall) error {
+		var (
+			err    error
+			result []storedMessage
+		)
 
-	const method = "GetMessages"
+		op := func(ctx context.Context) {
+			read := storageRead{
+				storage: service.bootstrap.Storage,
+				logger:  call.logger,
+			}
 
-	peerAddress := ""
-	if peer, ok := peer.FromContext(stream.Context()); ok {
-		peerAddress = peer.Addr.String()
-	}
+			// TODO: request flags check
+			// FIXME: filter flags
 
-	logInfo := map[string]any{
-		"debug_rpc_request": service.converter.encodeToJson(request, false),
-		"peer_addr":         peerAddress,
-		"service":           "flo_tg",
-		"method":            method,
-	}
-
-	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
-	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
-
-	var result []storedMessage
-	var err error
-
-	// TODO: request flags check
-	// FIXME: filter flags
-
-	op := func(ctx context.Context) {
-		read := storageRead{
-			storage: service.bootstrap.Storage,
-			logger:  logger,
+			result, err = read.Messages(call.ctx, request.SourceUid)
 		}
 
-		result, err = read.Messages(stream.Context(), request.SourceUid)
-	}
+		count := 0
 
-	if !service.bootstrap.Queue.Join(stream.Context(), time.Second*5, op) {
-		logger.Message(gelf.LOG_WARNING, "rpc_service", "Queue join did not run", logInfo)
-		return errors.New("queue is busy, try again")
-	}
-
-	if err != nil {
-		logger.Message(gelf.LOG_ERR, "rpc_service", "storage_read.Messages fail", logInfo, map[string]any{
-			"err":               err,
-			"debug_rpc_request": service.converter.encodeToJson(request, false),
-		})
-		if result == nil {
-			return errors.New("storage read operation failed on backend")
+		if !service.bootstrap.Queue.Join(call.ctx, time.Second*5, op) {
+			return errors.New("queue join failed (overload?)")
+		} else if err != nil {
+			return errors.Wrap(err, "storage_read failed")
+		} else if result == nil {
+			return errors.New("storage read operation failed on backend (result is nil)")
 		}
-	}
 
-	for i := range result {
-		err := stream.Send(result[i].Message)
-		if err != nil {
-			logger.Message(gelf.LOG_ERR, "rpc_service", "gRPC Stream.Send() fail", logInfo, map[string]any{
-				"err": err,
-			})
-			return errors.New("streaming failed on backend")
+		for i := range result {
+			err := stream.Send(result[i].Message)
+			if err != nil {
+				return errors.Wrap(err, "gRPC Stream.Send() fail")
+			} else {
+				count++
+			}
 		}
-	}
 
-	logger.Message(gelf.LOG_DEBUG, "rpc_service", "Request "+method+" completed", logInfo)
+		call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
 
-	return nil
+		return nil
+	})
 }

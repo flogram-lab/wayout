@@ -11,4 +11,4 @@ docker --context default run \
     --tls --cacert /cert/ca-cert.pem --cert /cert/server-cert.pem --certkey /cert/server-key.pem \
     --servername "$EVANS_SERVER_NAME" --host "$EVANS_HOST" --port 8920 \
     --reflection \
-    repl
+    repl $@
