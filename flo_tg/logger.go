@@ -34,7 +34,7 @@ func LogErrorf(errf string, arg ...any) {
 type Logger interface {
 	io.Writer
 	Close() error
-	Message(level int32, kind string, message string, extras ...map[string]interface{}) bool
+	Message(level int32, kind string, message string, extras ...map[string]any) bool
 	AddRequestID(requestUid string) Logger
 	CopyToStderr() Logger
 	SetAsDefault() Logger
@@ -64,7 +64,7 @@ func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
 		writer:     gelfWriter,
 		facility:   facility,
 		hostname:   selfHostname,
-		stderr: false,
+		stderr:     false,
 		requestUid: "",
 	}
 
@@ -77,7 +77,7 @@ func (dummyLogging) Close() error {
 	return nil
 }
 
-func (dummyLogging) Message(level int32, kind string, message string, extras ...map[string]interface{}) bool {
+func (dummyLogging) Message(level int32, kind string, message string, extras ...map[string]any) bool {
 	if data, err := json.MarshalIndent(extras, "", "    "); err != nil {
 		log.Println("WARN log not sent", level, kind, message)
 	} else {
@@ -121,14 +121,14 @@ func (logger *gelfLogger) AddRequestID(requestUid string) Logger {
 		writer:     logger.writer,
 		facility:   logger.facility,
 		hostname:   logger.hostname,
-		stderr: logger.stderr,
+		stderr:     logger.stderr,
 		requestUid: requestUid,
 	}
 }
 
-func (logger *gelfLogger) Message(level int32, kind string, message string, extras ...map[string]interface{}) bool {
+func (logger *gelfLogger) Message(level int32, kind string, message string, extras ...map[string]any) bool {
 
-	allExtras := map[string]interface{}{}
+	allExtras := map[string]any{}
 
 	for _, ex := range extras {
 		mergo.Merge(&allExtras, ex)

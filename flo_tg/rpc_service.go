@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil" // FIXME
-	"log"
 	"net"
 	"path"
 	"time"
@@ -113,7 +112,7 @@ func (service *rpcService) Init() error {
 
 func (service *rpcService) Serve() {
 
-	log.Printf("Start GRPC server at %s, TLS = %t", service.listener.Addr().String(), true)
+	service.bootstrap.Logger.Message(gelf.LOG_INFO, "rpc_service", fmt.Sprintf("Running Serve(), listener at %s", service.listener.Addr().String()))
 	err := service.server.Serve(service.listener)
 
 	if errors.Is(err, context.Canceled) {
@@ -167,15 +166,18 @@ func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stre
 	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
 	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
 
-	read := storageRead{
-		storage: service.bootstrap.Storage,
-		logger:  logger,
-	}
-
 	var result []storedSource
 	var err error
 
+	// TODO: request flags check
+	// FIXME: filter flags
+
 	op := func(ctx context.Context) {
+		read := storageRead{
+			storage: service.bootstrap.Storage,
+			logger:  logger,
+		}
+
 		result, err = read.Sources(ctx, request.SourceUids...)
 	}
 
@@ -229,15 +231,18 @@ func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, st
 	logger := service.bootstrap.Logger.AddRequestID(fmt.Sprintf("rpc-%s", RandStringBytesMaskImprSrcSB(8)))
 	logger.Message(gelf.LOG_INFO, "rpc_service", method+"() from peer: "+peerAddress, logInfo)
 
-	read := storageRead{
-		storage: service.bootstrap.Storage,
-		logger:  logger,
-	}
-
 	var result []storedMessage
 	var err error
 
+	// TODO: request flags check
+	// FIXME: filter flags
+
 	op := func(ctx context.Context) {
+		read := storageRead{
+			storage: service.bootstrap.Storage,
+			logger:  logger,
+		}
+
 		result, err = read.Messages(stream.Context(), request.SourceUid)
 	}
 

@@ -114,7 +114,7 @@ func (c *converter) encodeToJson(m any, pretty bool) string {
 	}
 
 	if err != nil {
-		logInfo := map[string]interface{}{
+		logInfo := map[string]any{
 			"err":        err.Error(),
 			"prettty":    pretty,
 			"debug_type": reflect.TypeOf(m),

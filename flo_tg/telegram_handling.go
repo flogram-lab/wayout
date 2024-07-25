@@ -52,7 +52,7 @@ func (handling *telegramHandling) requestFromMessage(handler string, logInfo map
 func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage) error {
 		handler := "handlerMessage"
-		logInfo := map[string]interface{}{
+		logInfo := map[string]any{
 			"handler":              handler,
 			"entities":             e,
 			"debug_td_update_type": reflect.TypeOf(u).String(),
@@ -87,7 +87,7 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
 
 		handler := "handlerChannelMessage"
-		logInfo := map[string]interface{}{
+		logInfo := map[string]any{
 			"handler":              handler,
 			"entities":             e,
 			"debug_td_update_type": reflect.TypeOf(u).String(),
@@ -121,14 +121,14 @@ func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHa
 
 func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message, logger Logger) error {
 
-	logInfo := map[string]interface{}{
+	logInfo := map[string]any{
 		"handler":     handler,
 		"entities":    e,
 		"from_id":     msg.FromID,
 		"message":     msg.Message,
 		"peer_id":     msg.PeerID,
 		"post_author": msg.PostAuthor,
-		"message_uid": msg.ID,
+		"message_id":  msg.ID,
 		"is_post":     msg.Post,
 	}
 
@@ -137,7 +137,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]any{
 			"err": err.Error(),
 		})
 
@@ -146,13 +146,13 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 
 	source, deepFromId := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoSource", logInfo, map[string]interface{}{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoSource", logInfo, map[string]any{
 		"debug_rpc": handling.converter.encodeToJson(source, false),
 	})
 
 	message := handling.converter.makeProtoMessage(msg, source, deepFromId)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoMessage", logInfo, map[string]interface{}{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoMessage", logInfo, map[string]any{
 		"debug_rpc": handling.converter.encodeToJson(message, false),
 	})
 
@@ -169,7 +169,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["sourceRefId"] = sourceRefId
 
 	if err != nil {
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Source storage failed", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Source storage failed", logInfo, map[string]any{
 			"err": err.Error(),
 		})
 		return err
@@ -181,7 +181,7 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 	logInfo["message_ref_id"] = messageRefId
 
 	if err != nil {
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message storage failed", logInfo, map[string]interface{}{
+		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message storage failed", logInfo, map[string]any{
 			"err": err.Error(),
 		})
 	} else {
