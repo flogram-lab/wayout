@@ -8,8 +8,8 @@ require (
 	dario.cat/mergo v1.0.0
 	github.com/cockroachdb/pebble v1.1.0
 	github.com/flogram-lab/wayout/flo_tg/proto v0.0.0-00010101000000-000000000000
+	github.com/go-errors/errors v1.4.2
 	github.com/go-faster/errors v0.7.1
-	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/gotd/contrib v0.20.0
 	github.com/gotd/td v0.102.0
@@ -37,6 +37,7 @@ require (
 	github.com/getsentry/sentry-go v0.18.0 // indirect
 	github.com/go-faster/jx v1.1.0 // indirect
 	github.com/go-faster/xor v1.0.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gotd/ige v0.2.2 // indirect
 	github.com/gotd/neo v0.1.5 // indirect

@@ -151,7 +151,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 			)
 
 			handling := newTelegramHandling(bootstrap, peerDB, self)
-			handling.Attach(dispatcher)
+			handling.AddEventHandlers(dispatcher)
 
 			// Waiting until context is done.
 			bootstrap.Logger.Message(gelf.LOG_DEBUG, "telegram", "Listening for updates. Interrupt (Ctrl+C) to stop.")
@@ -165,7 +165,7 @@ func CreateAndRunTelegramClient(ctx context.Context, bootstrap Bootstrap) error 
 		}); err != nil {
 			return errors.Wrap(err, "run")
 		}
-		
+
 		return err
 	})
 }

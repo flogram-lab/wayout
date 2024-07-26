@@ -37,7 +37,7 @@ type Logger interface {
 	Message(level int32, kind string, message string, extras ...map[string]any) bool
 	AddRequestID(requestUid string, fields ...map[string]any) Logger
 	SetField(key string, value any)
-	CopyToStderr() Logger
+	SetFields(map[string]any)
 	SetAsDefault() Logger
 }
 
@@ -66,11 +66,11 @@ func NewGraylogTCPLogger(facility, graylogAddr, selfHostname string) Logger {
 		writer:   gelfWriter,
 		facility: facility,
 		hostname: selfHostname,
-		stderr:   false,
+		stderr:   true,
 		fields:   map[string]any{},
 	}
 
-	log.Printf("Logging to stdout & graylog @%s", graylogAddr)
+	log.Printf("Logging errors to stderr, full logging to  graylog @%s", graylogAddr)
 
 	return logger
 }
@@ -93,7 +93,10 @@ func (dummy dummyLogging) AddRequestID(string, ...map[string]any) Logger {
 	return dummy
 }
 
-func (dummy dummyLogging) SetField(string, any) {
+func (dummyLogging) SetField(string, any) {
+}
+
+func (dummyLogging) SetFields(map[string]any) {
 }
 
 func (dummy dummyLogging) Write(p []byte) (int, error) {
@@ -101,10 +104,6 @@ func (dummy dummyLogging) Write(p []byte) (int, error) {
 }
 
 func (dummy dummyLogging) SetAsDefault() Logger {
-	return dummy
-}
-
-func (dummy dummyLogging) CopyToStderr() Logger {
 	return dummy
 }
 
@@ -117,21 +116,21 @@ func (logger *gelfLogger) AddRequestID(requestUid string, fields ...map[string]a
 		requestUid = oldId.(string) + "/" + requestUid
 	}
 
-	cloneFields := map[string]any{}
-	mergo.MergeWithOverwrite(cloneFields, logger.fields)
+	newFields := map[string]any{}
+	mergo.Merge(&newFields, logger.fields, mergo.WithOverride)
 
 	for _, v := range fields {
-		mergo.MergeWithOverwrite(cloneFields, v)
+		mergo.Merge(&newFields, v, mergo.WithOverride)
 	}
 
-	logger.fields["request_uid"] = requestUid
+	newFields["request_uid"] = requestUid
 
 	return &gelfLogger{
 		writer:   logger.writer,
 		facility: logger.facility,
 		hostname: logger.hostname,
 		stderr:   logger.stderr,
-		fields:   cloneFields,
+		fields:   newFields,
 	}
 }
 
@@ -139,23 +138,31 @@ func (logger *gelfLogger) SetField(key string, value any) {
 	logger.fields[key] = value
 }
 
+func (logger *gelfLogger) SetFields(newFields map[string]any) {
+	mergo.Merge(&logger.fields, newFields, mergo.WithOverride)
+}
+
 func (logger *gelfLogger) Message(level int32, kind string, message string, fields ...map[string]any) bool {
 
-	allExtras := map[string]any{}
+	messageFields := logger.fields
 
-	mergo.MergeWithOverwrite(&allExtras, logger.fields)
+	if len(fields) > 0 {
+		messageFields = make(map[string]any)
 
-	for _, ex := range fields {
-		mergo.MergeWithOverwrite(&allExtras, ex)
+		mergo.Merge(&messageFields, logger.fields, mergo.WithOverride)
+
+		for _, callExtraFields := range fields {
+			mergo.Merge(&messageFields, callExtraFields, mergo.WithOverride)
+		}
 	}
 
-	stdErrMessage := fmt.Sprintf("%s: %s\n", kind, message)
+	if level <= gelf.LOG_ERR {
+		stdErrMessage := fmt.Sprintf("%s: %s\n", kind, message)
 
-	if logger.fields["request_uid"] != "" {
-		stdErrMessage = fmt.Sprintf("[%s] %s", logger.fields["request_uid"], stdErrMessage)
-	}
+		if ruid, ok := logger.fields["request_uid"].(string); ok && ruid != "" {
+			stdErrMessage = fmt.Sprintf("[%s] %s", ruid, stdErrMessage)
+		}
 
-	if logger.stderr || level <= gelf.LOG_ERR {
 		os.Stderr.WriteString(stdErrMessage)
 	}
 
@@ -166,7 +173,7 @@ func (logger *gelfLogger) Message(level int32, kind string, message string, fiel
 		Full:     message,
 		TimeUnix: float64(time.Now().UnixNano()) / float64(time.Second),
 		Level:    level,
-		Extra:    allExtras,
+		Extra:    messageFields,
 		Facility: logger.facility,
 	}
 
@@ -195,10 +202,5 @@ func (logger *gelfLogger) Write(p []byte) (int, error) {
 
 func (l *gelfLogger) SetAsDefault() Logger {
 	defaultLogger = l
-	return l
-}
-
-func (l *gelfLogger) CopyToStderr() Logger {
-	l.stderr = true
 	return l
 }

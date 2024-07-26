@@ -28,120 +28,67 @@ func newTelegramHandling(bootstrap Bootstrap, peerDB *peeble.PeerStorage, selfUs
 	}
 }
 
-func (handling *telegramHandling) Attach(dispatcher tg.UpdateDispatcher) {
-	dispatcher.OnNewMessage(handling.handlerMessage())
-	dispatcher.OnNewChannelMessage(handling.handlerChannelMessage())
+func (handling *telegramHandling) AddEventHandlers(dispatcher tg.UpdateDispatcher) {
+	dispatcher.OnNewMessage(
+		telegramHandlerWrapper[*tg.UpdateNewMessage]{handling}.
+			wrappedRequestOnQueue("newMessage",
+				func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage, event string, logger Logger) error {
+					msg := u.Message
+
+					logger.SetFields(map[string]any{
+						"debug_td_msg_type":      reflect.TypeOf(msg).String(),
+						"debug_td_msg_type_tlid": msg.TypeID(),
+					})
+					logger.Message(gelf.LOG_DEBUG, "telegram_handling", fmt.Sprintf("Message ID: %d", msg.GetID()))
+
+					switch msg := u.Message.(type) {
+
+					case *tg.Message:
+						handling.saveMessageGeneric(ctx, event, e, msg, logger)
+						return nil
+
+					case *tg.MessageService: // TODO
+						// TODO Action : tg.MessageActionGroupCall
+						return nil
+
+					default:
+						logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)")
+						return errors.New("message class type not implemented")
+					}
+				}))
+
+	dispatcher.OnNewChannelMessage(
+		telegramHandlerWrapper[*tg.UpdateNewChannelMessage]{handling}.
+			wrappedRequestOnQueue("newChannelMessage",
+				func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage, event string, logger Logger) error {
+					msg := u.Message
+
+					logger.SetFields(map[string]any{
+						"debug_td_msg_type":      reflect.TypeOf(msg).String(),
+						"debug_td_msg_type_tlid": msg.TypeID(),
+					})
+					logger.Message(gelf.LOG_DEBUG, "telegram_handling", fmt.Sprintf("Message ID: %d", msg.GetID()))
+
+					switch msg := u.Message.(type) {
+
+					case *tg.Message:
+						handling.saveMessageGeneric(ctx, event, e, msg, logger)
+						return nil
+
+					case *tg.MessageService: // TODO
+						// TODO Action : tg.MessageActionGroupCall
+						return nil
+
+					default:
+						logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)")
+						return errors.New("message class type not implemented")
+					}
+				}))
 }
 
-func (handling *telegramHandling) requestFromMessage(logInfo map[string]any, msg tg.MessageClass) (Logger, error) {
-	logger := handling.bootstrap.Logger
-
-	if msg == nil {
-		handling.bootstrap.Logger.Message(gelf.LOG_ERR, "telegram_handling", "Message is nil", logInfo)
-		return logger, errors.New("Update.Message is nil")
-	}
-
-	logger = logger.AddRequestID(fmt.Sprintf("td-message-%d-%s", msg.GetID(), RandStringBytesMaskImprSrcSB(8)))
-
-	logInfo["debug_td_msg_type"] = reflect.TypeOf(msg).String()
-	logInfo["debug_td_msg_type_tlid"] = msg.TypeID()
-
-	return logger, nil
-}
-
-func (handling *telegramHandling) handlerMessage() tg.NewMessageHandler {
-	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewMessage) error {
-		handler := "handlerMessage"
-		logInfo := map[string]any{
-			"handler":              handler,
-			"entities":             e,
-			"debug_td_update_type": reflect.TypeOf(u).String(),
-		}
-
-		var (
-			err    error
-			logger Logger = handling.bootstrap.Logger
-		)
-
-		defer LogPanicErr(&err, logger, "telegram_handling", handler)
-
-		logger, err = handling.requestFromMessage(logInfo, u.Message)
-		if err != nil {
-			return err
-		}
-
-		switch msg := u.Message.(type) {
-
-		case *tg.Message:
-			logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handling (message) as genericHandleMessage", logInfo)
-
-			// if msg.Message == "crash!" {
-			// 	panic("testing panic 2")
-			// }
-
-			handling.bootstrap.Queue.Enqueue(func(ctx context.Context) {
-				handling.genericHandleMessage(handler, ctx, e, msg, logger)
-			})
-			return nil
-
-		case *tg.MessageService: // TODO
-			// TODO Action : tg.MessageActionGroupCall
-			return nil
-
-		default:
-			logger.Message(gelf.LOG_WARNING, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
-			return errors.New("message class type not implemented")
-		}
-	}
-}
-
-func (handling *telegramHandling) handlerChannelMessage() tg.NewChannelMessageHandler {
-	return func(ctx context.Context, e tg.Entities, u *tg.UpdateNewChannelMessage) error {
-
-		handler := "handlerChannelMessage"
-		logInfo := map[string]any{
-			"handler":              handler,
-			"entities":             e,
-			"debug_td_update_type": reflect.TypeOf(u).String(),
-		}
-
-		var (
-			err    error
-			logger Logger = handling.bootstrap.Logger
-		)
-
-		defer LogPanicErr(&err, logger, "telegram_handling", handler)
-
-		logger, err = handling.requestFromMessage(logInfo, u.Message)
-		if err != nil {
-			return err
-		}
-
-		switch msg := u.Message.(type) {
-
-		case *tg.Message:
-			logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handling (channel message) as genericHandleMessage", logInfo)
-			var op Op = func(ctx context.Context) {
-				handling.genericHandleMessage(handler, ctx, e, msg, logger)
-			}
-			handling.bootstrap.Queue.Enqueue(op)
-			return nil
-
-		case *tg.MessageService: // TODO
-			// TODO Action : tg.MessageActionGroupCall
-			return nil
-
-		default:
-			logger.Message(gelf.LOG_WARNING, "telegram_handling", "Message lost! Cast type failed (this should not happen, really)", logInfo)
-			return errors.New("message class type not implemented")
-		}
-	}
-}
-
-func (handling *telegramHandling) genericHandleMessage(handler string, ctx context.Context, e tg.Entities, msg *tg.Message, logger Logger) error {
-
-	logInfo := map[string]any{
-		"handler":     handler,
+func (handling *telegramHandling) saveMessageGeneric(ctx context.Context, event string, e tg.Entities, msg *tg.Message, logger Logger) {
+	logger.SetFields(map[string]any{
+		"event":       event,
 		"entities":    e,
 		"from_id":     msg.FromID,
 		"message":     msg.Message,
@@ -149,63 +96,65 @@ func (handling *telegramHandling) genericHandleMessage(handler string, ctx conte
 		"post_author": msg.PostAuthor,
 		"message_id":  msg.ID,
 		"is_post":     msg.Post,
-	}
+	})
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "genericHandleMessage", logInfo)
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Handler ("+event+") entered saveMessageGeneric")
 
 	peer, err := storage.FindPeer(ctx, handling.peerDB, msg.GetPeerID())
 	if err != nil {
 
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message lost! Peer not found in database", logInfo, map[string]any{
+		logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message lost! Peer not found in database", map[string]any{
 			"err": err.Error(),
 		})
 
-		return err
+		return
+	}
+
+	if msg.Message == "crash!" {
+		panic("testing crash from message")
 	}
 
 	source, deepFromId := handling.converter.makeProtoSource(msg, peer, e, handling.selfUser)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoSource", logInfo, map[string]any{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoSource", map[string]any{
 		"debug_rpc": handling.converter.encodeToJson(source, false),
 	})
 
 	message := handling.converter.makeProtoMessage(msg, source, deepFromId)
 
-	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoMessage", logInfo, map[string]any{
+	logger.Message(gelf.LOG_DEBUG, "telegram_handling", "After makeProtoMessage", map[string]any{
 		"debug_rpc": handling.converter.encodeToJson(message, false),
 	})
 
-	logInfo["source_uid"] = source.SourceUid
-	logInfo["message_uid"] = message.MessageUid
-	logInfo["deepFromId"] = deepFromId
+	logger.SetField("source_uid", source.SourceUid)
+	logger.SetField("message_uid", message.MessageUid)
+	logger.SetField("deepFromId", deepFromId)
 
-	save := storageSave{
+	save := storageSave{ // TODO: move in ctx here
 		storage: handling.bootstrap.Storage,
 		logger:  logger,
 	}
 
 	sourceRefId, err := save.Source(ctx, handling.converter, source)
-	logInfo["sourceRefId"] = sourceRefId
+	logger.SetField("sourceRefId", sourceRefId)
 
 	if err != nil {
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Source storage failed", logInfo, map[string]any{
+		logger.Message(gelf.LOG_ALERT, "telegram_handling", "Source storage failed", map[string]any{
 			"err": err.Error(),
 		})
-		return err
+		return
 	} else {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved", logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Source saved")
 	}
 
 	messageRefId, err := save.Message(ctx, handling.converter, source, message)
-	logInfo["message_ref_id"] = messageRefId
+	logger.SetField("message_ref_id", messageRefId)
 
 	if err != nil {
-		logger.Message(gelf.LOG_CRIT, "telegram_handling", "Message storage failed", logInfo, map[string]any{
+		logger.Message(gelf.LOG_ALERT, "telegram_handling", "Message storage failed", map[string]any{
 			"err": err.Error(),
 		})
 	} else {
-		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message saved", logInfo)
+		logger.Message(gelf.LOG_DEBUG, "telegram_handling", "Message saved")
 	}
-
-	return err
 }

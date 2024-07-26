@@ -83,37 +83,42 @@ func (q *Queue) Run() {
 	}
 }
 
-// Enqueue operation.
+// Push operation to be executed after others queued before.
 // May block if queue blocking (is full)
 func (q *Queue) Enqueue(op Op) {
 	q.op <- op
 }
 
-// Enqueue operation and wait before it is done.
-// This function may block for unlimited time.
-func (q *Queue) EnqueueAndWait(op Op) {
+// Push operation to be executed after others queued before.
+// This method will block until the operation finishes.
+// Operation won't run if given context is cancelled
+// Return value is true when the operation was finished and returned.
+func (q *Queue) Join(ctx context.Context, op Op) bool {
 	c := make(chan bool)
 	defer close(c)
+
+	// FIXME: add select for context cancellation
 
 	q.op <- func(ctx context.Context) {
 		op(ctx)
 		c <- true
 	}
 
-	<-c
+	return <-c
 }
 
-// Enqueue operation and wait before it is done (blocking) in order
-// Cancelled if queue waiting time was longer than the startTimeout
-// Cancelled if context is cancelled
-// Returns false only on startTimeout or if context was cancelled before enqueued.
-func (q *Queue) Join(ctx context.Context, startTimeout time.Duration, op Op) bool {
+// Push operation to be executed after others queued before.
+// This method will block until the operation finishes.
+// Operation won't run if given context is cancelled
+// Operation won't run if waiting for queue is longer than the startTimeout
+// Return value is true when the operation was finished and returned.
+func (q *Queue) JoinTimeout(ctx context.Context, startTimeout time.Duration, op Op) bool {
 	c := make(chan bool)
 	defer close(c)
 
 	started := time.Now()
 
-	// TODO: add select, ctx cancellation detected, and timeout using Ticker.
+	// FIXME: add select for context cancellation, and Ticker for timeout
 
 	q.op <- func(ctx context.Context) {
 		if time.Since(started) >= startTimeout {

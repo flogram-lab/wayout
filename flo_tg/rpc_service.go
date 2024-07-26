@@ -8,7 +8,6 @@ import (
 	"io/ioutil" // FIXME
 	"net"
 	"path"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -143,7 +142,6 @@ func (service rpcService) Ready(ctx context.Context, request *emptypb.Empty) (*e
 		if !service.bootstrap.Queue.IsReady() {
 			return errors.New("not ready: queue")
 		}
-		// panic("testing panic 1")
 		return nil
 	})
 }
@@ -162,15 +160,15 @@ func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stre
 			}
 
 			// TODO: request flags check
-			// FIXME: filter flags
+			// TODO: filter flags
 
 			result, err = read.Sources(ctx, request.SourceUids...)
 		}
 
 		count := 0
 
-		if !service.bootstrap.Queue.Join(call.ctx, time.Second*5, op) {
-			return errors.New("queue join failed (overload?)")
+		if !service.bootstrap.Queue.Join(call.ctx, op) {
+			err = errors.New("Queue::Join failed")
 		} else if err != nil {
 			return errors.Wrap(err, "storage_read failed")
 		} else if result == nil {
@@ -178,17 +176,25 @@ func (service rpcService) GetSources(request *proto.FlotgGetSourcesRequest, stre
 		}
 
 		for i := range result {
-			err := stream.Send(result[i].Source)
+			err = stream.Send(result[i].Source)
+
 			if err != nil {
-				return errors.Wrap(err, "gRPC Stream.Send() fail")
-			} else {
-				count++
+				err = errors.Wrap(err, "gRPC Stream.Send() fail, stop streaming")
+				break
 			}
+
+			count++
 		}
 
-		call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
+		if err != nil {
+			call.logger.Message(gelf.LOG_ERR, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count), map[string]any{
+				"err": err,
+			})
+		} else {
+			call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
+		}
 
-		return nil
+		return err
 	})
 }
 
@@ -206,15 +212,15 @@ func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, st
 			}
 
 			// TODO: request flags check
-			// FIXME: filter flags
+			// TODO: filter flags
 
 			result, err = read.Messages(call.ctx, request.SourceUid)
 		}
 
 		count := 0
 
-		if !service.bootstrap.Queue.Join(call.ctx, time.Second*5, op) {
-			return errors.New("queue join failed (overload?)")
+		if !service.bootstrap.Queue.Join(call.ctx, op) {
+			err = errors.New("Queue::Join failed")
 		} else if err != nil {
 			return errors.Wrap(err, "storage_read failed")
 		} else if result == nil {
@@ -222,16 +228,24 @@ func (service rpcService) GetMessages(request *proto.FlotgGetMessagesRequest, st
 		}
 
 		for i := range result {
-			err := stream.Send(result[i].Message)
+			err = stream.Send(result[i].Message)
+
 			if err != nil {
-				return errors.Wrap(err, "gRPC Stream.Send() fail")
-			} else {
-				count++
+				err = errors.Wrap(err, "gRPC Stream.Send() fail, stop streaming")
+				break
 			}
+
+			count++
 		}
 
-		call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
+		if err != nil {
+			call.logger.Message(gelf.LOG_ERR, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count), map[string]any{
+				"err": err,
+			})
+		} else {
+			call.logger.Message(gelf.LOG_DEBUG, "rpc_service", fmt.Sprintf("%s: streamed %d items", call.method, count))
+		}
 
-		return nil
+		return err
 	})
 }

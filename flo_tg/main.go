@@ -35,8 +35,7 @@ func main() {
 		bootstrap.Logger.Message(gelf.LOG_CRIT, "main", "rpc_service.Init() failed, RPC service cannot be started", map[string]any{
 			"err": err,
 		})
-		LogErrorln("ERR: gRPC server failed to start")
-		os.Exit(1) // FIXME: defer calls?
+		panic("ERR: gRPC server failed to start")
 	}
 
 	defer service.Close()
